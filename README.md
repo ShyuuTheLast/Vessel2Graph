@@ -12,7 +12,6 @@ Vessel2Graph is a project for skeletonizing and visualizing vessel data from 3D 
   - [data_processing.py](#data_processingpy)
   - [graph_segmentation.py](#graph_segmentationpy)
   - [visualization.py](#visualizationpy)
-- [License](#license)
 
 ## Installation
 
@@ -129,7 +128,3 @@ Contains functions for skeletonizing the volume, generating graphs, identifying 
 ### visualization.py
 
 Contains functions for visualizing the skeleton, radii, colored skeletons, path radii histograms, and creating videos from graphs.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
