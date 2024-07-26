@@ -17,7 +17,7 @@ Vessel2Graph is a project for skeletonizing and visualizing vessel data from 3D 
 
 1. **Clone the repository**:
     ```bash
-    git clone https://github.com/your-username/Vessel2Graph.git
+    git clone https://github.com/ShyuuTheLast/Vessel2Graph.git
     cd Vessel2Graph
     ```
 
