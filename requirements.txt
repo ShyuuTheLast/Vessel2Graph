@@ -13,6 +13,7 @@ cloud-files==4.26.0
 cloud-volume==10.1.0
 colorama==0.4.6
 compressed_segmentation==2.3.1
+configobj==5.0.8
 connected-components-3d==3.18.0
 contourpy==1.2.1
 crc32c==2.4.1
