@@ -259,7 +259,8 @@ def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
 
     # Initialize output volumes
     output_label = np.zeros_like(filtered_array)
-    output_dist = np.ones_like(filtered_array) * 99999
+    output_dist = np.ones_like(filtered_array, dtype=np.float32) * 99999
+
 
     # Compute distance transforms and update the output volumes
     for label in skel_label:
