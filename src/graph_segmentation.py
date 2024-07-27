@@ -244,41 +244,36 @@ def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
     - tuple: The segmented volume and the unique labels.
     """
     # Create a 3D volume for the skeleton points with the same shape as `filtered_array`
-    vol_skel = np.zeros_like(filtered_array)
-    skel_label = set()
-
-    # Populate `vol_skel` with labels from graph nodes, excluding branch and end points
+    category_indices = np.zeros_like(filtered_array, dtype=int)
+    
+    # Set to store unique categories
+    unique_labels = set()
+    
+    # Populate `category_indices` with labels from graph nodes
     for node in G.nodes:
-        if attribute in G.nodes[node]:  # Ensure the node has the attribute
-            # Adjust coordinates to fit the original array size
+        if attribute in G.nodes[node]:  # Ensure the node has the specified attribute
             adjusted_node = tuple(int(coord / scale) for coord, scale in zip(node, scaled_voxel_size))
-            vol_skel[adjusted_node] = G.nodes[node][attribute]
-            skel_label.add(G.nodes[node][attribute])
+            category = G.nodes[node][attribute]
+            category_indices[adjusted_node] = category
+            unique_labels.add(category)
 
-    skel_label = list(skel_label)
+    # Create a mask for the foreground voxels in category_indices
+    foreground_mask = category_indices != 0
 
-    # Initialize output volumes
-    output_label = np.zeros_like(filtered_array)
-    output_dist = np.ones_like(filtered_array, dtype=np.float32) * 99999
+    # Compute distance transform from foreground to non-foreground regions
+    _, indices = ndi.distance_transform_cdt(~foreground_mask, return_indices=True)
 
+    # Initialize the output label array with zeros
+    output_label = np.zeros_like(filtered_array, dtype=int)
 
-    # Compute distance transforms and update the output volumes
-    for label in skel_label:
-        mask = vol_skel == label
-        print(f"Label {label} has {np.sum(mask)} voxels")
+    # Map each non-zero voxel to the nearest category using the indices
+    non_zero_mask = filtered_array != 0
+    output_label[non_zero_mask] = category_indices[tuple(indices[:, non_zero_mask])]
 
-        dist = ndi.distance_transform_cdt(~mask)  # Use Euclidean distance transform for accuracy
-        update = dist < output_dist
-        print(f"Updating {np.sum(update)} voxels")
+    # Extract unique labels present in the segmented volume
+    skel_label = sorted(unique_labels)
 
-        # Update the output arrays
-        output_label[update] = label
-        output_dist[update] = dist[update]
-
-    # Apply the labels to the segmented volume
-    filtered_array[filtered_array == 1] = output_label[filtered_array == 1]
-
-    return filtered_array, skel_label
+    return output_label, skel_label
 
 def save_segmented_volume(filtered_array, skel_label, file_name):
     """
