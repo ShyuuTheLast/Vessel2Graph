@@ -55,3 +55,18 @@ def scale_isotropy(voxel_size):
     scaled_voxel_size = tuple(v / common_factor for v in voxel_size)
     
     return scaled_voxel_size, common_factor
+
+
+def load_existing_skeletons(file_path):
+    """
+    Load skeletons from a .npz file.
+
+    Parameters:
+    - file_path (str): The path to the .npz file containing the skeletons.
+
+    Returns:
+    - dict: A dictionary of skeleton objects, where each key is an ID and each value is a skeleton.
+    """
+    loaded_data = np.load(file_path, allow_pickle=True)
+    skeletons = loaded_data['skeletons'].item()
+    return skeletons

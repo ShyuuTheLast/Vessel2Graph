@@ -6,7 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 import scipy.ndimage as ndi
-import h5py
 
 def skeletonize_volume(volume, teasar_params, anisotropy):
     """
@@ -63,6 +62,22 @@ def get_branch_points(G):
     """
     branch_points = {node: (G.nodes[node]['seg_id'], G.nodes[node]['radius']) for node in G.nodes if len(list(G.neighbors(node))) > 2}
     return branch_points
+
+def get_neighbor_counts(G, branch_points):
+    """
+    Generate a dictionary with branch point coordinates as keys and the number of their neighbors as values.
+
+    Parameters:
+    - G (networkx.Graph): The graph object containing the nodes and edges.
+    - branch_points (dict): Dictionary of branch points.
+
+    Returns:
+    - dict: A dictionary with branch point coordinates as keys and neighbor counts as values.
+    """
+    neighbor_counts = {}
+    for point in branch_points.keys():
+        neighbor_counts[point] = len(list(G.neighbors(point)))
+    return neighbor_counts
 
 def get_end_points(G):
     """
@@ -211,24 +226,52 @@ def cluster_medians(medians, optimal_clusters):
     labels = kmeans.labels_ + 1  # Add 1 to each label
     return labels
 
-def relabel_graph_with_branches(G, unique_paths, labels):
+def relabel_graph_with_branches(G, unique_paths, labels, radii):
     """
-    Relabel the full graph with branch indices and cluster labels.
+    Relabel the graph nodes with branch indices and clusters, and calculate branch details.
 
     Parameters:
-    - G (networkx.Graph): The full graph.
-    - unique_paths (list of lists): Each element is a list representing a path, where each node is a tuple (node, radius).
-    - labels (list): Cluster labels for each median.
+    - G (networkx.Graph): The original graph.
+    - unique_paths (list): A list of unique paths in the graph, each containing tuples of (coords, radius).
+    - labels (list): The cluster labels for the branches.
+    - radii (list): The median radii for each branch.
 
     Returns:
-    - networkx.Graph: The relabeled graph.
+    - networkx.Graph: The graph with nodes relabeled.
+    - list: A list of dictionaries, each representing a branch with its details.
+    - float: The total length of the skeleton.
     """
-    for index, unique_path in enumerate(unique_paths):
-        label = labels[index]
-        for node, radius in unique_path:
-            G.nodes[node]['label'] = label
+    branch_info = []
+    total_length = 0
+
+    for index, path in enumerate(unique_paths):
+        branch_details = {
+            "index": index + 1,  # 1-based index
+            "coords": [],
+            "median_radius": radii[index],
+            "label": labels[index],
+            "length": 0
+        }
+
+        previous_node = None
+        for node, radius in path:
+            G.nodes[node]['label'] = labels[index]
             G.nodes[node]['branch'] = index + 1
-    return G
+            
+            branch_details["coords"].append(node)
+            
+            # If there is a previous node, calculate the length to the current node
+            if previous_node is not None:
+                branch_length = np.linalg.norm(np.array(previous_node) - np.array(node))
+                branch_details["length"] += branch_length
+            
+            previous_node = node
+        
+        # Add the full branch length to the total length after the branch is processed
+        total_length += branch_details["length"]
+        branch_info.append(branch_details)
+
+    return G, branch_info, total_length
 
 def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
     """
@@ -274,43 +317,6 @@ def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
     skel_label = sorted(unique_labels)
 
     return output_label, skel_label
-
-def save_segmented_volume(filtered_array, skel_label, file_name):
-    """
-    Save the segmented volume as an HDF5 file with compression.
-
-    Parameters:
-    - filtered_array (np.ndarray): The segmented volume to be saved.
-    - skel_label (list): The unique labels in the segmented volume.
-    - file_name (str): The name of the output file.
-
-    Returns:
-    - None
-
-    Raises:
-    - ValueError: If the file name has an extension other than .h5.
-    """
-    # Ensure the file name ends with .h5
-    if '.' in file_name and not file_name.endswith('.h5'):
-        raise ValueError("Error: The volume must be saved as an HDF5 file with a .h5 extension.")
-
-    if not file_name.endswith('.h5'):
-        file_name += '.h5'
-
-    # Determine the appropriate datatype (e.g., uint8 if labels fit within 0-255)
-    max_label = np.max(skel_label)
-    if max_label < 256:
-        dtype = np.uint8
-    elif max_label < 65536:
-        dtype = np.uint16
-    else:
-        dtype = np.uint32
-
-    # Save the full `filtered_array` as a single HDF5 file with compression
-    with h5py.File(file_name, 'w') as f:
-        f.create_dataset('main', data=filtered_array.astype(dtype), compression='gzip')
-
-    print(f"Full volume saved as: {file_name}")
 
 def scale_graph(G, common_factor):
     """
