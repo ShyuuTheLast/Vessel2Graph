@@ -58,7 +58,7 @@ def main(args):
     G, branch_info, total_length = relabel_graph_with_branches(G, unique_paths, labels, medians)
 
     # Save the stats
-    #save_stats(args.stats_output_path, branch_points, end_points, neighbor_counts, branch_info, total_length)
+    save_stats(args.stats_output_path, branch_points, end_points, neighbor_counts, branch_info, total_length)
 
     # Segment the volume
     segmented_volume, skel_label = segment_volume(filtered_array, G, scaled_voxel_size, attribute=args.segmentation_attribute)
@@ -172,9 +172,9 @@ if __name__ == "__main__":
             target_labels = [1]  # Labels to keep in the array
             segmentation_attribute = 'label'  # Attribute to segment and visualize by
             scale_factor = 30  # Scale factor for visualization
-            visualize_skeleton = True  # Whether to visualize the skeleton
+            visualize_skeleton = False  # Whether to visualize the skeleton
             visualize_radii = False  # Whether to visualize the distribution of radii
-            visualize_skeleton_colored = True  # Whether to visualize the skeleton colored by attribute
+            visualize_skeleton_colored = False  # Whether to visualize the skeleton colored by attribute
             visualize_paths_radii = False  # Whether to visualize the radii of paths
             
             create_video = False  # Whether to create a video
@@ -183,7 +183,7 @@ if __name__ == "__main__":
             video_graph_type = 'simplified'  # Type of graph to use for the video ('full' or 'simplified')
             video_output_file = 'simplified_macaque.mp4'  # Name of the output video file (must end with .avi or .mp4)
             
-            stats_output_path = 'macaque_stats.json'
+            stats_output_path = 'macaque_stats'
             
         args = Args()
     main(args)
