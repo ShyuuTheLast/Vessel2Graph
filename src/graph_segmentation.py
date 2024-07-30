@@ -273,6 +273,31 @@ def relabel_graph_with_branches(G, unique_paths, labels, radii):
 
     return G, branch_info, total_length
 
+def get_ellipsoid_surface(radius, scaling_factors):
+    """
+    Generate the surface voxels of an ellipsoid given a radius and scaling factors.
+
+    Parameters:
+    - radius (int): The radius of the ellipsoid.
+    - scaling_factors (tuple): The scaling factors (sz, sy, sx) for the z, y, x axes.
+
+    Returns:
+    - np.ndarray: An array of shape (N, 3) with the coordinates of the surface voxels.
+    """
+    sz, sy, sx = scaling_factors
+    theta = np.linspace(0, np.pi, 100)
+    phi = np.linspace(0, 2 * np.pi, 100)
+    theta, phi = np.meshgrid(theta, phi)
+
+    # Parametric equations for the ellipsoid
+    x = radius * np.sin(theta) * np.cos(phi) / sx
+    y = radius * np.sin(theta) * np.sin(phi) / sy
+    z = radius * np.cos(theta) / sz
+
+    # Flatten and combine coordinates
+    coords = np.vstack((z.ravel(), y.ravel(), x.ravel())).T
+    return coords
+
 def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
     """
     Segment the volume using distance transforming with a specified node attribute.
@@ -280,7 +305,7 @@ def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
     Parameters:
     - filtered_array (np.ndarray): The filtered array to be segmented.
     - G (networkx.Graph): The graph containing the skeleton data with the specified attribute.
-    - scaled_voxel_size (tuple): The anisotropy scaling factors.
+    - scaled_voxel_size (tuple): The anisotropy scaling factors (sz, sy, sx).
     - attribute (str): The node attribute to segment by (default is 'label').
 
     Returns:
@@ -292,12 +317,22 @@ def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
     # Set to store unique categories
     unique_labels = set()
     
-    # Populate `category_indices` with labels from graph nodes
-    for node in G.nodes:
+    # Iterate through the nodes in the graph
+    for idx, node in enumerate(G.nodes):
         if attribute in G.nodes[node]:  # Ensure the node has the specified attribute
-            adjusted_node = tuple(int(coord / scale) for coord, scale in zip(node, scaled_voxel_size))
             category = G.nodes[node][attribute]
-            category_indices[adjusted_node] = category
+            radius = G.nodes[node]['radius']  # Use the node's radius attribute
+
+            # Get the surface voxels of the ellipsoid
+            surface_voxels = get_ellipsoid_surface(radius, scaled_voxel_size)
+
+            # Adjust the node coordinates to match the anisotropic space
+            adjusted_node = np.array([int(coord / scale) for coord, scale in zip(node, scaled_voxel_size)])
+            adjusted_surface_voxels = (surface_voxels + adjusted_node).astype(int)
+
+            # Set the surface voxels in category_indices using advanced indexing
+            z_coords, y_coords, x_coords = adjusted_surface_voxels.T
+            category_indices[z_coords, y_coords, x_coords] = category
             unique_labels.add(category)
 
     # Create a mask for the foreground voxels in category_indices
@@ -306,17 +341,14 @@ def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
     # Compute distance transform from foreground to non-foreground regions
     _, indices = ndi.distance_transform_cdt(~foreground_mask, return_indices=True)
 
-    # Initialize the output label array with zeros
-    output_label = np.zeros_like(filtered_array, dtype=int)
-
     # Map each non-zero voxel to the nearest category using the indices
     non_zero_mask = filtered_array != 0
-    output_label[non_zero_mask] = category_indices[tuple(indices[:, non_zero_mask])]
+    filtered_array[non_zero_mask] = category_indices[tuple(indices[:, non_zero_mask])]
 
     # Extract unique labels present in the segmented volume
     skel_label = sorted(unique_labels)
 
-    return output_label, skel_label
+    return filtered_array, skel_label
 
 def scale_graph(G, common_factor):
     """
