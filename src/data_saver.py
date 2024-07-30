@@ -1,7 +1,6 @@
 # src/data_saver.py
 import h5py
 import numpy as np
-import json
 import matplotlib.pyplot as plt
 import cv2
 import os
@@ -74,7 +73,7 @@ def save_segmented_volume(filtered_array, skel_label, file_name):
 
 def save_stats(output_path, branch_points, end_points, neighbor_counts, branch_info, total_length):
     """
-    Save statistics to a JSON file.
+    Save statistics to a .npz file.
 
     Parameters:
     - output_path (str): The file path to save the statistics.
@@ -92,10 +91,9 @@ def save_stats(output_path, branch_points, end_points, neighbor_counts, branch_i
         'total_length': total_length
     }
     
-    with open(output_path, 'w') as f:
-        json.dump(stats, f, indent=4)
+    # Save the stats dictionary into an .npz file
+    np.savez_compressed(output_path, **stats)
     print(f"Statistics saved to {output_path}")
-
 
 def plot_graph(angle, graph):
     """
