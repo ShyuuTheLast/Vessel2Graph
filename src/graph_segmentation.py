@@ -332,7 +332,12 @@ def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
 
             # Set the surface voxels in category_indices using advanced indexing
             z_coords, y_coords, x_coords = adjusted_surface_voxels.T
-            category_indices[z_coords, y_coords, x_coords] = category
+            valid_mask = (
+                (z_coords >= 0) & (z_coords < filtered_array.shape[0]) &
+                (y_coords >= 0) & (y_coords < filtered_array.shape[1]) &
+                (x_coords >= 0) & (x_coords < filtered_array.shape[2])
+            )
+            category_indices[z_coords[valid_mask], y_coords[valid_mask], x_coords[valid_mask]] = category
             unique_labels.add(category)
 
     # Create a mask for the foreground voxels in category_indices

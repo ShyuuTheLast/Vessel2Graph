@@ -159,7 +159,7 @@ if __name__ == "__main__":
         class Args:
             input_file = r"C:\Users\14132\Desktop\BC Research Internship\Vessel2Graph\macaque_mpi_176-240nm_bv_gt_cc.h5"  # Path to the input HDF5 file
             dataset_name = 'main'  # Name of the dataset in the HDF5 file
-            output_file = 'segmented_macaque_vessels.h5'  # Name of the output HDF5 file
+            output_file = 'branch_segmented_macaque_vessels.h5'  # Name of the output HDF5 file
             voxel_size = (320, 256, 256)  # Voxel sizes in z, y, x order
             
             generate_new_skeleton = False  # Set to False to use existing skeletons
@@ -170,7 +170,7 @@ if __name__ == "__main__":
             skeleton_output_path = "output_skeleton.h5"
             
             target_labels = [1]  # Labels to keep in the array
-            segmentation_attribute = 'label'  # Attribute to segment and visualize by
+            segmentation_attribute = 'branch'  # Attribute to segment and visualize by
             scale_factor = 30  # Scale factor for visualization
             visualize_skeleton = False  # Whether to visualize the skeleton
             visualize_radii = False  # Whether to visualize the distribution of radii
