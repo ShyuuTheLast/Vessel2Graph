@@ -334,9 +334,9 @@ def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
             z_coords, y_coords, x_coords = adjusted_surface_voxels.T
 
             # check bounds for each coord
-            valid_z = (z_coords < shape[0])
-            valid_y = (y_coords < shape[1])
-            valid_x = (x_coords < shape[2])
+            valid_z = (0 <= z_coords) & (z_coords < shape[0])
+            valid_y = (0 <= y_coords) & (y_coords < shape[1])
+            valid_x = (0 <= x_coords) & (x_coords < shape[2])
             valid_coords = valid_z & valid_y & valid_x
 
             # update each array
