@@ -163,22 +163,23 @@ def simplified_graph_generation(G, branch_points, end_points):
 
     return simplified_G, unique_paths
 
-def get_median_radii(unique_paths):
+def get_represent_radii(unique_paths):
     """
-    Get the median radius for each branch in unique_paths.
+    Get the representative radius for each branch in unique_paths. Currently consist of medians and means
 
     Parameters:
     - unique_paths (list of lists): Each element is a list representing a path, where each node is a tuple (node, radius).
 
     Returns:
-    - list: List of median radii for each branch.
+    - tuple: Two lists, one containing the median radii and the other containing the mean radii for each branch.
     """
     medians = []
+    means = []
     for path in unique_paths:
         radii = [node[1] for node in path]
-        median_radius = np.median(radii)
-        medians.append(median_radius)
-    return medians
+        medians.append(np.median(radii))
+        means.append(np.mean(radii))
+    return medians, means
 
 def plot_elbow_curve(medians, max_clusters=10):
     """
@@ -226,7 +227,7 @@ def cluster_medians(medians, optimal_clusters):
     labels = kmeans.labels_ + 1  # Add 1 to each label
     return labels
 
-def relabel_graph_with_branches(G, unique_paths, labels, radii):
+def relabel_graph_with_branches(G, unique_paths, labels, medians, means):
     """
     Relabel the graph nodes with branch indices and clusters, and calculate branch details.
 
@@ -234,7 +235,8 @@ def relabel_graph_with_branches(G, unique_paths, labels, radii):
     - G (networkx.Graph): The original graph.
     - unique_paths (list): A list of unique paths in the graph, each containing tuples of (coords, radius).
     - labels (list): The cluster labels for the branches.
-    - radii (list): The median radii for each branch.
+    - medians (list): The median radii for each branch.
+    - means (list): The mean radii for each branch.
 
     Returns:
     - networkx.Graph: The graph with nodes relabeled.
@@ -248,9 +250,12 @@ def relabel_graph_with_branches(G, unique_paths, labels, radii):
         branch_details = {
             "index": index + 1,  # 1-based index
             "coords": [],
-            "median_radius": radii[index],
+            "median_radius": medians[index],
+            "mean_radius": means[index],
             "label": labels[index],
-            "length": 0
+            "length": 0,
+            "mean_volume":0,
+            "tortuosity": 0
         }
 
         previous_node = None
@@ -262,16 +267,66 @@ def relabel_graph_with_branches(G, unique_paths, labels, radii):
             
             # If there is a previous node, calculate the length to the current node
             if previous_node is not None:
-                branch_length = np.linalg.norm(np.array(previous_node) - np.array(node))
-                branch_details["length"] += branch_length
+                branch_details["length"] += np.linalg.norm(np.array(previous_node) - np.array(node))
             
             previous_node = node
         
+        # Calculate mean volume using the simplified approximation
+        branch_details["mean_volume"] = np.pi * (branch_details["mean_radius"] ** 2) * branch_details["length"]
+        
+        # Calculate tortuosity
+        start_node = np.array(branch_details["coords"][0])
+        end_node = np.array(branch_details["coords"][-1])
+        euclidean_distance = np.linalg.norm(start_node - end_node)
+        actual_length = branch_details["length"]
+
+        branch_details["tortuosity"] = actual_length / euclidean_distance if euclidean_distance != 0 else 0
+
         # Add the full branch length to the total length after the branch is processed
         total_length += branch_details["length"]
         branch_info.append(branch_details)
 
     return G, branch_info, total_length
+
+def calculate_branching_angles(G, branch_points):
+    """
+    Calculate the branching angles at each branch point in the graph.
+
+    Parameters:
+    - G (networkx.Graph): The graph containing the skeleton data.
+    - branch_points (list): A list of branch point nodes.
+
+    Returns:
+    - dict: A dictionary with tuples of branch indices as keys and branching angles as values.
+    """
+    branching_angles = {}
+
+    for branch_point in branch_points.keys():
+        neighbors = list(G.neighbors(branch_point))
+
+        # Calculate vectors from the branch point to each neighbor
+        vectors = {}
+        for neighbor in neighbors:
+            vectors[neighbor] = np.array(neighbor) - np.array(branch_point)
+
+        # Iterate over all unique pairs of neighbors
+        for i, neighbor1 in enumerate(neighbors):
+            for j, neighbor2 in enumerate(neighbors):
+                if i < j:  # Avoid repeating pairs
+                    vector1 = vectors[neighbor1]
+                    vector2 = vectors[neighbor2]
+
+                    # Calculate the angle between the two vectors
+                    cosine_angle = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
+                    angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
+
+                    # Store the angle with the pair of neighbors as the key
+                    key = tuple(sorted((G.nodes[neighbor1]['branch'], G.nodes[neighbor2]['branch'])))
+                    if key not in branching_angles:
+                        branching_angles[key] = []
+                    branching_angles[key].append(np.degrees(angle))
+
+    return branching_angles
 
 def get_ellipsoid_surface(radius, scaling_factors):
     """

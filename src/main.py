@@ -3,8 +3,9 @@ import argparse
 from data_loader import load_hdf5, scale_isotropy, load_existing_skeletons
 from graph_segmentation import (
     skeletonize_volume, full_graph_generation, get_branch_points, get_end_points,
-    get_neighbor_counts, simplified_graph_generation, get_median_radii, plot_elbow_curve, 
-    cluster_medians, relabel_graph_with_branches, segment_volume, scale_graph
+    get_neighbor_counts, simplified_graph_generation, get_represent_radii, plot_elbow_curve, 
+    cluster_medians, relabel_graph_with_branches, calculate_branching_angles, 
+    segment_volume, scale_graph
 )
 from data_saver import (
     save_skeleton_to_file, save_segmented_volume, save_stats, graph2video
@@ -45,7 +46,7 @@ def main(args):
     simplified_G, unique_paths = simplified_graph_generation(G, branch_points, end_points)
 
     # Get median radii of each branch
-    medians = get_median_radii(unique_paths)
+    medians, means = get_represent_radii(unique_paths)
 
     # Plot the elbow curve to determine the optimal number of clusters
     plot_elbow_curve(medians)
@@ -55,10 +56,12 @@ def main(args):
     labels = cluster_medians(medians, optimal_clusters)
 
     # Relabel the graph and get branch details and total length
-    G, branch_info, total_length = relabel_graph_with_branches(G, unique_paths, labels, medians)
-
+    G, branch_info, total_length = relabel_graph_with_branches(G, unique_paths, labels, medians, means)
+    
+    branching_angles = calculate_branching_angles(G, branch_points)
+    
     # Save the stats
-    save_stats(args.stats_output_path, branch_points, end_points, neighbor_counts, branch_info, total_length)
+    save_stats(args.stats_output_path, branch_points, end_points, neighbor_counts, branch_info, total_length, branching_angles)
 
     # Segment the volume
     segmented_volume, skel_label = segment_volume(filtered_array, G, scaled_voxel_size, attribute=args.segmentation_attribute)

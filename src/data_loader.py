@@ -56,7 +56,6 @@ def scale_isotropy(voxel_size):
     
     return scaled_voxel_size, common_factor
 
-
 def load_existing_skeletons(file_path):
     """
     Load skeletons from a .npz file.

@@ -71,7 +71,7 @@ def save_segmented_volume(filtered_array, skel_label, file_name):
 
     print(f"Full volume saved as: {file_name}")
 
-def save_stats(output_path, branch_points, end_points, neighbor_counts, branch_info, total_length):
+def save_stats(output_path, branch_points, end_points, neighbor_counts, branch_info, total_length, branching_angles):
     """
     Save statistics to a .npz file.
 
@@ -88,7 +88,8 @@ def save_stats(output_path, branch_points, end_points, neighbor_counts, branch_i
         'end_points': end_points,
         'neighbor_counts': neighbor_counts,
         'branch_info': branch_info,
-        'total_length': total_length
+        'total_length': total_length,
+        'branching_angle':branching_angles
     }
     
     # Save the stats dictionary into an .npz file
