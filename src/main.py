@@ -1,11 +1,11 @@
 # src/main.py
 import argparse
-from data_loader import load_hdf5, scale_isotropy, load_existing_skeletons
+from data_loader import load_hdf5, load_existing_skeletons
 from graph_segmentation import (
     skeletonize_volume, full_graph_generation, get_branch_points, get_end_points,
     get_neighbor_counts, simplified_graph_generation, get_represent_radii, plot_elbow_curve, 
     cluster_medians, relabel_graph_with_branches, calculate_branching_angles, 
-    segment_volume, scale_graph
+    segment_volume
 )
 from data_saver import (
     save_skeleton_to_file, save_segmented_volume, save_stats, graph2video
@@ -19,13 +19,12 @@ from visualization import (
 def main(args):
     # Load and preprocess the data
     filtered_array = load_hdf5(args.input_file, args.dataset_name, target_labels=args.target_labels)
-    scaled_voxel_size, common_factor = scale_isotropy(args.voxel_size)
 
     # Handle skeleton generation or loading existing skeletons
     if args.generate_new_skeleton:
         # Skeletonize the volume
         teasar_params = eval(args.teasar_params) if args.teasar_params else {}
-        skeletons = skeletonize_volume(filtered_array, teasar_params, anisotropy=scaled_voxel_size)
+        skeletons = skeletonize_volume(filtered_array, teasar_params, anisotropy=args.voxel_size)
 
         # Optionally save the generated skeleton
         if args.save_skeleton:
@@ -64,7 +63,7 @@ def main(args):
     save_stats(args.stats_output_path, branch_points, end_points, neighbor_counts, branch_info, total_length, branching_angles)
 
     # Segment the volume
-    segmented_volume, skel_label = segment_volume(filtered_array, G, scaled_voxel_size, attribute=args.segmentation_attribute)
+    segmented_volume, skel_label = segment_volume(filtered_array, G, args.voxel_size, attribute=args.segmentation_attribute)
 
     # Save the segmented volume
     save_segmented_volume(segmented_volume, skel_label, args.output_file)
@@ -87,11 +86,11 @@ def main(args):
     # Create a video of the graph if specified
     if args.create_video:
         if args.video_graph_type == 'full':
-            scaled_G = scale_graph(G, common_factor)
+            graph2video(G, args.video_output_file, num_rotations=args.num_rotations, fps=args.fps)
         elif args.video_graph_type == 'simplified':
-            scaled_G = scale_graph(simplified_G, common_factor)
+            graph2video(simplified_G, args.video_output_file, num_rotations=args.num_rotations, fps=args.fps)
 
-        graph2video(scaled_G, args.video_output_file, num_rotations=args.num_rotations, fps=args.fps)
+        
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Pipeline for processing and visualizing skeletonized blood vessel volumes.")
@@ -166,16 +165,16 @@ if __name__ == "__main__":
             voxel_size = (320, 256, 256)  # Voxel sizes in z, y, x order
             
             generate_new_skeleton = False  # Set to False to use existing skeletons
-            teasar_params = '{"scale": 1.5, "const": 600, "pdrf_scale": 100000, "pdrf_exponent": 4, "soma_acceptance_threshold": 3500, "soma_detection_threshold": 750, "soma_invalidation_const": 300, "soma_invalidation_scale": 2, "max_paths": 300}'  # JSON string of TEASAR parameters
-            existing_skeletons_path = None if generate_new_skeleton else r"C:\Users\14132\Desktop\Vessel2Graph\src\output_skeleton.npz"
+            teasar_params = '{"scale": 1.5, "const": 40000, "pdrf_scale": 100000, "pdrf_exponent": 4, "soma_acceptance_threshold": 3500, "soma_detection_threshold": 750, "soma_invalidation_const": 300, "soma_invalidation_scale": 2, "max_paths": 300}'  # JSON string of TEASAR parameters
+            existing_skeletons_path = None if generate_new_skeleton else r"C:\Users\14132\Desktop\Vessel2Graph\src\macaque_original_isotropy_skeleton.npz"
             
             save_skeleton = True
-            skeleton_output_path = "output_skeleton.h5"
+            skeleton_output_path = "macaque_original_isotropy_skeleton.npz"
             
             target_labels = [1]  # Labels to keep in the array
             segmentation_attribute = 'branch'  # Attribute to segment and visualize by
-            scale_factor = 30  # Scale factor for visualization
-            visualize_skeleton = False  # Whether to visualize the skeleton
+            scale_factor = 1920  # Scale factor for visualization
+            visualize_skeleton = True  # Whether to visualize the skeleton
             visualize_radii = False  # Whether to visualize the distribution of radii
             visualize_skeleton_colored = False  # Whether to visualize the skeleton colored by attribute
             visualize_paths_radii = False  # Whether to visualize the radii of paths

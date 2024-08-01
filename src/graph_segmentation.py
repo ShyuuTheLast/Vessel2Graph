@@ -353,14 +353,14 @@ def get_ellipsoid_surface(radius, scaling_factors):
     coords = np.vstack((z.ravel(), y.ravel(), x.ravel())).T
     return coords
 
-def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
+def segment_volume(filtered_array, G, voxel_size, attribute='label'):
     """
     Segment the volume using distance transforming with a specified node attribute.
 
     Parameters:
     - filtered_array (np.ndarray): The filtered array to be segmented.
     - G (networkx.Graph): The graph containing the skeleton data with the specified attribute.
-    - scaled_voxel_size (tuple): The anisotropy scaling factors (sz, sy, sx).
+    - voxel_size (tuple): The anisotropy scaling factors (sz, sy, sx).
     - attribute (str): The node attribute to segment by (default is 'label').
 
     Returns:
@@ -379,10 +379,10 @@ def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
             radius = G.nodes[node]['radius']  # Use the node's radius attribute
 
             # Get the surface voxels of the ellipsoid
-            surface_voxels = get_ellipsoid_surface(radius, scaled_voxel_size)
+            surface_voxels = get_ellipsoid_surface(radius, voxel_size)
 
             # Adjust the node coordinates to match the anisotropic space
-            adjusted_node = np.array([int(coord / scale) for coord, scale in zip(node, scaled_voxel_size)])
+            adjusted_node = np.array([int(coord / scale) for coord, scale in zip(node, voxel_size)])
             adjusted_surface_voxels = (surface_voxels + adjusted_node).astype(int)
 
             # Set the surface voxels in category_indices using advanced indexing
@@ -409,30 +409,3 @@ def segment_volume(filtered_array, G, scaled_voxel_size, attribute='label'):
     skel_label = sorted(unique_labels)
 
     return filtered_array, skel_label
-
-def scale_graph(G, common_factor):
-    """
-    Scale the graph to the actual size of the data represented by the isotropy.
-
-    Parameters:
-    - G (networkx.Graph): The original graph.
-    - common_factor (float): The common factor by which to scale the graph.
-
-    Returns:
-    - networkx.Graph: The scaled graph.
-    """
-    scaled_G = nx.Graph()
-
-    # Scale the node coordinates and radius
-    for node, data in G.nodes(data=True):
-        scaled_node = tuple(coord * common_factor for coord in node)
-        scaled_radius = data['radius'] * common_factor
-        scaled_G.add_node(scaled_node, seg_id=data['seg_id'], radius=scaled_radius)
-        
-    # Add the edges
-    for u, v in G.edges:
-        scaled_u = tuple(coord * common_factor for coord in u)
-        scaled_v = tuple(coord * common_factor for coord in v)
-        scaled_G.add_edge(scaled_u, scaled_v)
-
-    return scaled_G

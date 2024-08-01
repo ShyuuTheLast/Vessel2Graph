@@ -1,8 +1,6 @@
 # src/data_loader.py
 import h5py
 import numpy as np
-from math import gcd
-from functools import reduce
 
 def load_hdf5(file_path, dataset_name, target_labels=[1]):
     """
@@ -35,26 +33,6 @@ def filter_label(data_array, target_labels):
         target_labels = [target_labels]
     mask = np.isin(data_array, target_labels)
     return np.where(mask, data_array, 0)
-
-def scale_isotropy(voxel_size):
-    """
-    Scale voxel sizes for isotropy by finding a common factor.
-
-    Parameters:
-    - voxel_size (tuple of int): The voxel sizes in (z, y, x) order.
-
-    Returns:
-    - tuple: Scaled voxel sizes and the common factor.
-    """
-    def find_gcd(lst):
-        return reduce(gcd, lst)
-
-    # Convert voxel sizes to integers with appropriate scaling to handle floating point precision
-    voxel_size_int = [int(v * 1000) for v in voxel_size]
-    common_factor = find_gcd(voxel_size_int) / 1000  # Scale back to original units
-    scaled_voxel_size = tuple(v / common_factor for v in voxel_size)
-    
-    return scaled_voxel_size, common_factor
 
 def load_existing_skeletons(file_path):
     """
