@@ -321,10 +321,14 @@ def calculate_branching_angles(G, branch_points):
                     angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
 
                     # Store the angle with the pair of neighbors as the key
-                    key = tuple(sorted((G.nodes[neighbor1]['branch'], G.nodes[neighbor2]['branch'])))
-                    if key not in branching_angles:
-                        branching_angles[key] = []
-                    branching_angles[key].append(np.degrees(angle))
+
+                    if 'branch' in G.nodes[neighbor1] and 'branch' in G.nodes[neighbor2]:
+                        key = tuple(sorted((G.nodes[neighbor1]['branch'], G.nodes[neighbor2]['branch'])))
+                        if key not in branching_angles:
+                            branching_angles[key] = []
+                        branching_angles[key].append(np.degrees(angle))
+                    else:
+                        print("one of {neighbor1}, {neighbor2} in G does not have the branch attribute")
 
     return branching_angles
 
