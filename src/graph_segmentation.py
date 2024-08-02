@@ -113,13 +113,17 @@ def traverse_path(G, start, previous, branch_points, end_points):
         neighbors = list(G.neighbors(current))
         next_node = neighbors[0] if neighbors[1] == previous else neighbors[1]
 
-        if next_node in branch_points or next_node in end_points:
+        if next_node in branch_points:  # Only exclude branch points
             return path, next_node
 
         previous = current
         current = next_node
         path.append([current, G.nodes[current]['radius']])
 
+        # Keep end_points in path
+        if next_node in end_points:
+            path.append([next_node, G.nodes[next_node]['radius']])
+            return path, next_node
 
 def simplified_graph_generation(G, branch_points, end_points):
     """
