@@ -323,12 +323,13 @@ def calculate_branching_angles(G, branch_points):
                     # Calculate the angle between the two vectors
                     cosine_angle = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
                     angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
-
-                    # Store the angle with the pair of neighbors as the key
-                    key = tuple(sorted((G.nodes[neighbor1]['branch'], G.nodes[neighbor2]['branch'])))
-                    if key not in branching_angles:
-                        branching_angles[key] = []
-                    branching_angles[key].append(np.degrees(angle))
+                    
+                    if 'branch' in G.nodes[neighbor1] and 'branch' in G.nodes[neighbor2]:
+                        # Store the angle with the pair of neighbors as the key
+                        key = tuple(sorted((G.nodes[neighbor1]['branch'], G.nodes[neighbor2]['branch'])))
+                        if key not in branching_angles:
+                            branching_angles[key] = []
+                        branching_angles[key].append(np.degrees(angle))
 
     return branching_angles
 
