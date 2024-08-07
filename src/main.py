@@ -1,10 +1,11 @@
 # src/main.py
 import argparse
+import numpy as np
 from data_loader import load_hdf5, load_existing_skeletons
 from graph_segmentation import (
     skeletonize_volume, full_graph_generation, get_branch_points, get_end_points,
     get_neighbor_counts, simplified_graph_generation, get_represent_radii, plot_elbow_curve, 
-    cluster_medians, relabel_graph_with_branches, calculate_branching_angles, 
+    cluster_medians, relabel_graph_with_branches, label_branch_points, calculate_branching_angles, 
     segment_volume
 )
 from data_saver import (
@@ -19,7 +20,10 @@ from visualization import (
 def main(args):
     # Load and preprocess the data
     filtered_array = load_hdf5(args.input_file, args.dataset_name, target_labels=args.target_labels)
-
+    
+    if args.debug:
+        print("Unique values in the array:", np.unique(filtered_array))
+    
     # Handle skeleton generation or loading existing skeletons
     if args.generate_new_skeleton:
         # Skeletonize the volume
@@ -32,7 +36,11 @@ def main(args):
     else:
         # Load existing skeletons from the specified path
         skeletons = load_existing_skeletons(args.existing_skeletons_path)
-        
+    
+    if args.debug:
+        for key, value in skeletons.items():
+            print(f"Key: {key}, Number of vertices: {value.vertices.shape[0]}")
+            
     # Generate the full graph
     G = full_graph_generation(skeletons)
 
@@ -40,7 +48,11 @@ def main(args):
     branch_points = get_branch_points(G)
     end_points = get_end_points(G)
     neighbor_counts = get_neighbor_counts(G, branch_points)
-
+    
+    if args.debug:
+        print("Number of branch points:", len(branch_points))
+        print("Number of end points:", len(end_points))
+    
     # Generate the simplified graph
     simplified_G, unique_paths = simplified_graph_generation(G, branch_points, end_points)
 
@@ -56,6 +68,8 @@ def main(args):
 
     # Relabel the graph and get branch details and total length
     G, branch_info, total_length = relabel_graph_with_branches(G, unique_paths, labels, medians, means)
+    
+    G = label_branch_points(G,branch_points)
     
     branching_angles = calculate_branching_angles(G, branch_points)
     
@@ -131,6 +145,8 @@ def parse_args():
    # Parameter for stats output path
     parser.add_argument('--stats_output_path', type=str, help="Path to save the statistics output")
     
+    parser.add_argument('--debug', action='store_true', help="Whether to print various debug information")
+    
     args = parser.parse_args()
 
     # Validate the arguments
@@ -164,8 +180,8 @@ if __name__ == "__main__":
             output_file = 'branch_segmented_macaque_vessels.h5'  # Name of the output HDF5 file
             voxel_size = (320, 256, 256)  # Voxel sizes in z, y, x order
             
-            generate_new_skeleton = False  # Set to False to use existing skeletons
-            teasar_params = '{"scale": 1.5, "const": 40000, "pdrf_scale": 100000, "pdrf_exponent": 4, "soma_acceptance_threshold": 3500, "soma_detection_threshold": 750, "soma_invalidation_const": 300, "soma_invalidation_scale": 2, "max_paths": 300}'  # JSON string of TEASAR parameters
+            generate_new_skeleton = True  # Set to False to use existing skeletons
+            teasar_params = '{"scale": 1.5, "const": 42000, "pdrf_scale": 100000, "pdrf_exponent": 4, "soma_acceptance_threshold": 3500, "soma_detection_threshold": 750, "soma_invalidation_const": 300, "soma_invalidation_scale": 2, "max_paths": 300}'  # JSON string of TEASAR parameters
             existing_skeletons_path = None if generate_new_skeleton else r"C:\Users\14132\Desktop\Vessel2Graph\src\macaque_original_isotropy_skeleton.npz"
             
             save_skeleton = True
@@ -186,6 +202,8 @@ if __name__ == "__main__":
             video_output_file = 'simplified_macaque.mp4'  # Name of the output video file (must end with .avi or .mp4)
             
             stats_output_path = 'macaque_stats'
+            
+            debug = True
             
         args = Args()
     main(args)

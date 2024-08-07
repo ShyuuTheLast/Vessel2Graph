@@ -292,6 +292,34 @@ def relabel_graph_with_branches(G, unique_paths, labels, medians, means):
 
     return G, branch_info, total_length
 
+def label_branch_points(G, branch_points):
+    """
+    Label branch points with the same label as their non-branch_point neighbor with the largest radius.
+
+    Parameters:
+    - G (networkx.Graph): The graph containing the skeleton data.
+    - branch_points (list): A list of branch point nodes.
+
+    Returns:
+    - networkx.Graph: The graph with branch points labeled.
+    """
+    for branch_point in branch_points:
+        neighbors = list(G.neighbors(branch_point))
+        
+        max_radius = -1
+        selected_label = None
+        for neighbor in neighbors:
+            if neighbor not in branch_points:
+                radius = G.nodes[neighbor]['radius']
+                if radius > max_radius:
+                    max_radius = radius
+                    selected_label = G.nodes[neighbor]['label']
+
+        if selected_label is not None:
+            G.nodes[branch_point]['label'] = selected_label
+
+    return G
+
 def calculate_branching_angles(G, branch_points):
     """
     Calculate the branching angles at each branch point in the graph.
