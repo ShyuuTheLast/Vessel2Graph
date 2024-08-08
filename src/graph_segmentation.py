@@ -323,7 +323,7 @@ def label_branch_points(G, branch_points):
         for neighbor in neighbors:
             if neighbor not in branch_points:
                 radius = G.nodes[neighbor]['radius']
-                if radius > max_radius:
+                if radius > max_radius and 'label' in G.nodes[neighbor]:
                     max_radius = radius
                     selected_label = G.nodes[neighbor]['label']
 

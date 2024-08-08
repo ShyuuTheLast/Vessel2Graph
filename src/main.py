@@ -190,7 +190,7 @@ if __name__ == "__main__":
             segmentation_attribute = 'label'  # Attribute to segment and visualize by
             
             scale_factor = 1920  # Scale factor for visualization
-            visualize_skeleton = True  # Whether to visualize the skeleton
+            visualize_skeleton = False  # Whether to visualize the skeleton
             visualize_radii = False  # Whether to visualize the distribution of radii
             visualize_skeleton_colored = False  # Whether to visualize the skeleton colored by attribute
             visualize_paths_radii = False  # Whether to visualize the radii of paths
