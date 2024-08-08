@@ -125,6 +125,24 @@ def traverse_path(G, start, previous, branch_points, end_points):
             path.append([next_node, G.nodes[next_node]['radius']])
             return path, next_node
 
+def get_represent_radii(unique_paths):
+    """
+    Get the representative radius for each branch in unique_paths. Currently consist of medians and means
+
+    Parameters:
+    - unique_paths (list of lists): Each element is a list representing a path, where each node is a tuple (node, radius).
+
+    Returns:
+    - tuple: Two lists, one containing the median radii and the other containing the mean radii for each branch.
+    """
+    medians = []
+    means = []
+    for path in unique_paths:
+        radii = [node[1] for node in path]
+        medians.append(np.median(radii))
+        means.append(np.mean(radii))
+    return medians, means
+
 def simplified_graph_generation(G, branch_points, end_points):
     """
     Generate a simplified graph containing only branch points and end points from the full graph.
@@ -149,12 +167,12 @@ def simplified_graph_generation(G, branch_points, end_points):
     paths = []
 
     # Trace paths starting from each branch point
-    for branch in branch_points.keys():
-        neighbors = list(G.neighbors(branch))
+    for branch_point in branch_points.keys():
+        neighbors = list(G.neighbors(branch_point))
         for neighbor in neighbors:
             if neighbor not in branch_points and neighbor not in end_points:
-                path, endpoint = traverse_path(G, neighbor, branch, branch_points, end_points)
-                simplified_G.add_edge(branch, endpoint)
+                path, endpoint = traverse_path(G, neighbor, branch_point, branch_points, end_points)
+                simplified_G.add_edge(branch_point, endpoint)
                 paths.append(path)
 
     # Remove duplicate paths
@@ -165,32 +183,26 @@ def simplified_graph_generation(G, branch_points, end_points):
         if not any(len(p) == path_length and (p[0] == start and p[-1] == end or p[0] == end and p[-1] == start) for p in unique_paths):
             unique_paths.append(path)
 
-    return simplified_G, unique_paths
+    medians, means = get_represent_radii(unique_paths)
+    
 
-def get_represent_radii(unique_paths):
-    """
-    Get the representative radius for each branch in unique_paths. Currently consist of medians and means
+    combined = list(zip(medians, means, unique_paths))
+    combined_sorted = sorted(combined)
+    medians_sorted, means_sorted, unique_paths_sorted = zip(*combined_sorted)
+    
+    # Convert back to lists (optional, if needed as lists)
+    medians_sorted = list(medians_sorted)
+    means_sorted = list(means_sorted)
+    unique_paths_sorted = list(unique_paths_sorted)
+    
+    return simplified_G, unique_paths_sorted, medians_sorted, means_sorted
 
-    Parameters:
-    - unique_paths (list of lists): Each element is a list representing a path, where each node is a tuple (node, radius).
-
-    Returns:
-    - tuple: Two lists, one containing the median radii and the other containing the mean radii for each branch.
-    """
-    medians = []
-    means = []
-    for path in unique_paths:
-        radii = [node[1] for node in path]
-        medians.append(np.median(radii))
-        means.append(np.mean(radii))
-    return medians, means
-
-def plot_elbow_curve(medians, max_clusters=10):
+def plot_elbow_curve(rep_rad, max_clusters=10):
     """
     Plot the Elbow curve to help determine the optimal number of clusters.
 
     Parameters:
-    - medians (list): List of median radii for each branch.
+    - rep_rad (list): List of representative radii for each branch.
     - max_clusters (int): Maximum number of clusters to consider (default is 10).
     """
     # Set the environment variable to avoid memory leaks
@@ -199,7 +211,7 @@ def plot_elbow_curve(medians, max_clusters=10):
     inertia = []
     range_n_clusters = list(range(1, max_clusters + 1))
     for n_clusters in range_n_clusters:
-        kmeans = KMeans(n_clusters=n_clusters, n_init=10, random_state=42).fit(np.array(medians).reshape(-1, 1))
+        kmeans = KMeans(n_clusters=n_clusters, n_init=10, random_state=42).fit(np.array(rep_rad).reshape(-1, 1))
         inertia.append(kmeans.inertia_)
 
     # Plot the Elbow curve
@@ -213,12 +225,12 @@ def plot_elbow_curve(medians, max_clusters=10):
     # Ask the user to choose the optimal number of clusters
     print("Please choose the optimal number of clusters based on the Elbow plot.")
 
-def cluster_medians(medians, optimal_clusters):
+def cluster_radius(rep_rad, optimal_clusters):
     """
     Cluster the medians based on the chosen number of clusters.
 
     Parameters:
-    - medians (list): List of median radii for each branch.
+    - rep_rad (list): List of representative radii for each branch.
     - optimal_clusters (int): The chosen number of clusters.
 
     Returns:
@@ -227,11 +239,11 @@ def cluster_medians(medians, optimal_clusters):
     # Set the environment variable to avoid memory leaks
     os.environ["OMP_NUM_THREADS"] = "1"
 
-    kmeans = KMeans(n_clusters=optimal_clusters, n_init=10, random_state=42).fit(np.array(medians).reshape(-1, 1))
+    kmeans = KMeans(n_clusters=optimal_clusters, n_init=10, random_state=42).fit(np.array(rep_rad).reshape(-1, 1))
     labels = kmeans.labels_ + 1  # Add 1 to each label
     return labels
 
-def relabel_graph_with_branches(G, unique_paths, labels, medians, means):
+def relabel_graph_with_branches(G, unique_paths, labels, rep_rad, means):
     """
     Relabel the graph nodes with branch indices and clusters, and calculate branch details.
 
@@ -239,7 +251,7 @@ def relabel_graph_with_branches(G, unique_paths, labels, medians, means):
     - G (networkx.Graph): The original graph.
     - unique_paths (list): A list of unique paths in the graph, each containing tuples of (coords, radius).
     - labels (list): The cluster labels for the branches.
-    - medians (list): The median radii for each branch.
+    - rep_rad (list): The representative radii for each branch.
     - means (list): The mean radii for each branch.
 
     Returns:
@@ -254,7 +266,7 @@ def relabel_graph_with_branches(G, unique_paths, labels, medians, means):
         branch_details = {
             "index": index + 1,  # 1-based index
             "coords": [],
-            "median_radius": medians[index],
+            "representative_radus": rep_rad[index],
             "mean_radius": means[index],
             "label": labels[index],
             "length": 0,

@@ -4,8 +4,8 @@ import numpy as np
 from data_loader import load_hdf5, load_existing_skeletons
 from graph_segmentation import (
     skeletonize_volume, full_graph_generation, get_branch_points, get_end_points,
-    get_neighbor_counts, simplified_graph_generation, get_represent_radii, plot_elbow_curve, 
-    cluster_medians, relabel_graph_with_branches, label_branch_points, calculate_branching_angles, 
+    get_neighbor_counts, simplified_graph_generation, plot_elbow_curve, 
+    cluster_radius, relabel_graph_with_branches, label_branch_points, calculate_branching_angles, 
     segment_volume
 )
 from data_saver import (
@@ -54,17 +54,14 @@ def main(args):
         print("Number of end points:", len(end_points))
     
     # Generate the simplified graph
-    simplified_G, unique_paths = simplified_graph_generation(G, branch_points, end_points)
-
-    # Get median radii of each branch
-    medians, means = get_represent_radii(unique_paths)
+    simplified_G, unique_paths, medians, means = simplified_graph_generation(G, branch_points, end_points)
 
     # Plot the elbow curve to determine the optimal number of clusters
     plot_elbow_curve(medians)
     optimal_clusters = int(input("Enter the optimal number of clusters: "))
 
     # Cluster the medians
-    labels = cluster_medians(medians, optimal_clusters)
+    labels = cluster_radius(medians, optimal_clusters)
 
     # Relabel the graph and get branch details and total length
     G, branch_info, total_length = relabel_graph_with_branches(G, unique_paths, labels, medians, means)
@@ -126,9 +123,11 @@ def parse_args():
     parser.add_argument('--save_skeleton', action='store_true', help="Flag to save the generated skeleton")
     parser.add_argument('--skeleton_output_path', type=str, help="Path to save the skeleton (required if save_skeleton is true)")
     
-    # Segmentation and visualization parameters
+    # Segmentation and 
     parser.add_argument('--target_labels', type=int, nargs='+', default=[1], help="Labels to keep in the array")
     parser.add_argument('--segmentation_attribute', type=str, default='label', help="Attribute to segment and visualize by")
+    
+    #Visualization parameters
     parser.add_argument('--scale_factor', type=int, default=10, help="Scale factor for visualization")
     parser.add_argument('--visualize_skeleton', action='store_true', help="Whether to visualize the skeleton")
     parser.add_argument('--visualize_radii', action='store_true', help="Whether to visualize the distribution of radii")
@@ -177,10 +176,10 @@ if __name__ == "__main__":
         class Args:
             input_file = r"C:\Users\14132\Desktop\BC Research Internship\Vessel2Graph\macaque_mpi_176-240nm_bv_gt_cc.h5"  # Path to the input HDF5 file
             dataset_name = 'main'  # Name of the dataset in the HDF5 file
-            output_file = 'branch_segmented_macaque_vessels.h5'  # Name of the output HDF5 file
+            output_file = 'label_segmented_macaque_vessels.h5'  # Name of the output HDF5 file
             voxel_size = (320, 256, 256)  # Voxel sizes in z, y, x order
             
-            generate_new_skeleton = True  # Set to False to use existing skeletons
+            generate_new_skeleton = False  # Set to False to use existing skeletons
             teasar_params = '{"scale": 1.5, "const": 42000, "pdrf_scale": 100000, "pdrf_exponent": 4, "soma_acceptance_threshold": 3500, "soma_detection_threshold": 750, "soma_invalidation_const": 300, "soma_invalidation_scale": 2, "max_paths": 300}'  # JSON string of TEASAR parameters
             existing_skeletons_path = None if generate_new_skeleton else r"C:\Users\14132\Desktop\Vessel2Graph\src\macaque_original_isotropy_skeleton.npz"
             
@@ -188,7 +187,8 @@ if __name__ == "__main__":
             skeleton_output_path = "macaque_original_isotropy_skeleton.npz"
             
             target_labels = [1]  # Labels to keep in the array
-            segmentation_attribute = 'branch'  # Attribute to segment and visualize by
+            segmentation_attribute = 'label'  # Attribute to segment and visualize by
+            
             scale_factor = 1920  # Scale factor for visualization
             visualize_skeleton = True  # Whether to visualize the skeleton
             visualize_radii = False  # Whether to visualize the distribution of radii
@@ -203,7 +203,7 @@ if __name__ == "__main__":
             
             stats_output_path = 'macaque_stats'
             
-            debug = True
+            debug = False
             
         args = Args()
     main(args)
