@@ -56,18 +56,9 @@ def save_segmented_volume(filtered_array, skel_label, file_name):
     if not file_name.endswith('.h5'):
         file_name += '.h5'
 
-    # Determine the appropriate datatype (e.g., uint8 if labels fit within 0-255)
-    max_label = np.max(skel_label)
-    if max_label < 256:
-        dtype = np.uint8
-    elif max_label < 65536:
-        dtype = np.uint16
-    else:
-        dtype = np.uint32
-
     # Save the full `filtered_array` as a single HDF5 file with compression
     with h5py.File(file_name, 'w') as f:
-        f.create_dataset('main', data=filtered_array.astype(dtype), compression='gzip')
+        f.create_dataset('main', data=filtered_array, compression='gzip')
 
     print(f"Full volume saved as: {file_name}")
 

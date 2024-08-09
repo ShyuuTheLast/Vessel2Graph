@@ -411,8 +411,12 @@ def segment_volume(filtered_array, G, voxel_size, attribute='label'):
     Returns:
     - tuple: The segmented volume and the unique labels.
     """
+    
+    if attribute == 'radius':
+        filtered_array = filtered_array.astype(float)
+    
     # Create a 3D volume for the skeleton points with the same shape as `filtered_array`
-    category_indices = np.zeros_like(filtered_array, dtype=int)
+    category_indices = np.zeros_like(filtered_array)
     
     # Set to store unique categories
     unique_labels = set()

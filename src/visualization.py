@@ -2,6 +2,7 @@
 import numpy as np
 import mayavi.mlab as mlab
 import matplotlib.pyplot as plt
+import napari
 
 def visualize_skeleton(skeletons, scale_factor=10):
     """
@@ -104,4 +105,27 @@ def plot_all_paths_radii(unique_paths):
         plt.xlabel('Radius')
         plt.ylabel('Frequency')
         plt.show()
+
+def visualize_volume_heatmap(volume):
+    """
+    Visualize a 3D volume using Napari.
+
+    Parameters:
+    - volume (np.ndarray): The 3D NumPy array representing the volume to visualize.
+
+    Returns:
+    - None
+    """
+    # Ensure the volume is a NumPy array
+    if not isinstance(volume, np.ndarray):
+        raise ValueError("The volume must be a NumPy array.")
+
+    # Create a Napari viewer
+    viewer = napari.Viewer()
+
+    # Add the volume to Napari with the specified colormap
+    viewer.add_image(volume, colormap='RdBu', contrast_limits=[0, np.max(volume)])
+
+    # Start the Napari viewer
+    napari.run()
 

@@ -13,7 +13,7 @@ from data_saver import (
 )
 from visualization import (
     visualize_skeleton, visualize_radii, visualize_skeleton_colored,
-    plot_all_paths_radii
+    plot_all_paths_radii, visualize_volume_heatmap
 )
 
 
@@ -93,16 +93,20 @@ def main(args):
 
     if args.visualize_paths_radii:
         plot_all_paths_radii(unique_paths)
-
+    
+    if args.visualize_heatmap:
+        if args.segmentation_attribute == 'radius':
+            visualize_volume_heatmap(segmented_volume)
+        else:
+            print('Heatmap visualization is available only for volume segmented by radius')
+    
     # Create a video of the graph if specified
     if args.create_video:
         if args.video_graph_type == 'full':
             graph2video(G, args.video_output_file, num_rotations=args.num_rotations, fps=args.fps)
         elif args.video_graph_type == 'simplified':
             graph2video(simplified_G, args.video_output_file, num_rotations=args.num_rotations, fps=args.fps)
-
         
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Pipeline for processing and visualizing skeletonized blood vessel volumes.")
     
@@ -133,7 +137,8 @@ def parse_args():
     parser.add_argument('--visualize_radii', action='store_true', help="Whether to visualize the distribution of radii")
     parser.add_argument('--visualize_skeleton_colored', action='store_true', help="Whether to visualize the skeleton colored by attribute")
     parser.add_argument('--visualize_paths_radii', action='store_true', help="Whether to visualize the radii of paths")
-    
+    parser.add_argument('--visualize_heatmap', action='store_true', help="Whether to visualize the heatmap representing the volume segmented by node radius")
+
     # Video generation parameters
     parser.add_argument('--create_video', action='store_true', help="Whether to create a video")
     parser.add_argument('--num_rotations', type=int, default=3, help="Number of full rotations for video")
@@ -187,13 +192,14 @@ if __name__ == "__main__":
             skeleton_output_path = "macaque_original_isotropy_skeleton.npz"
             
             target_labels = [1]  # Labels to keep in the array
-            segmentation_attribute = 'label'  # Attribute to segment and visualize by
+            segmentation_attribute = 'radius'  # Attribute to segment and visualize by
             
             scale_factor = 1920  # Scale factor for visualization
             visualize_skeleton = False  # Whether to visualize the skeleton
             visualize_radii = False  # Whether to visualize the distribution of radii
             visualize_skeleton_colored = False  # Whether to visualize the skeleton colored by attribute
             visualize_paths_radii = False  # Whether to visualize the radii of paths
+            visualize_heatmap = False # Whether to visualize heatmap based off radii
             
             create_video = False  # Whether to create a video
             num_rotations = 3  # Number of full rotations for video
