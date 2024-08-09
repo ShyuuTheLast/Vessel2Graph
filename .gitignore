@@ -1,2 +1,8 @@
 
 /src/__pycache__
+src/branch_segmented_macaque_vessels.h5
+src/label_segmented_macaque_vessels.h5
+src/macaque_original_isotropy_skeleton.npz
+src/macaque_stats.npz
+src/output_skeleton.npz
+src/test.npz
