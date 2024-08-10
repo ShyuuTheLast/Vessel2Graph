@@ -304,6 +304,36 @@ def relabel_graph_with_branches(G, unique_paths, labels, rep_rad, means):
 
     return G, branch_info, total_length
 
+def relabel_adjacent_branches(G, target_label):
+    """
+    Relabel branches that are adjacent to any of the nodes with target_label
+    Purpose - When looking at large radius vessel system, include adjacent branches for non-choppy visualization purposes
+
+    Parameters:
+    - G (networkx.Graph): The graph containing the skeleton data
+    - target_label (int): The segmentation label into which we are pulling in adjacent branches (use the large radius vessel system label)
+
+    Returns:
+    - networkx.Graph: The graph with relabeled branches.
+    """
+
+    #list of branch indices we are pulling in
+    branches = list()
+
+    for node in G.nodes:
+        if('label' in G.nodes[node] and G.nodes[node]['label'] == target_label):
+            for neighbor in G.neighbors(node):
+                if('label' in G.nodes[neighbor] and G.nodes[neighbor]['label'] != target_label and G.nodes[neighbor]['branch'] not in branches):
+                    branches.append(G.nodes[neighbor]['branch'])
+
+    # Relabel each of the branches in the list to target_label
+    # Do we have a more direct mapping between a branch index and its label? - so we don't have to iterate thru nodes list
+    for node in G.nodes:
+        if('branch' in G.nodes[node] and G.nodes[node]['branch'] in branches):
+            G.nodes[node]['label'] = target_label
+
+    return G
+
 def label_branch_points(G, branch_points):
     """
     Label branch points with the same label as their non-branch_point neighbor with the largest radius.
