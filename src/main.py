@@ -5,7 +5,7 @@ from data_loader import load_hdf5, load_existing_skeletons
 from graph_segmentation import (
     skeletonize_volume, full_graph_generation, get_branch_points, get_end_points,
     get_neighbor_counts, simplified_graph_generation, plot_elbow_curve, 
-    cluster_radius, relabel_graph_with_branches, label_branch_points, calculate_branching_angles, 
+    cluster_radius, relabel_graph_with_branches, label_branch_points, relabel_adjacent_branches, calculate_branching_angles, 
     segment_volume
 )
 from data_saver import (
@@ -73,6 +73,10 @@ def main(args):
     # Save the stats
     save_stats(args.stats_output_path, branch_points, end_points, neighbor_counts, branch_info, total_length, branching_angles)
 
+    # Option to pull in adjacent branches into a given segmentation cluster
+    if args.pull_adjacent_branches:
+        G = relabel_adjacent_branches(G, 2)
+
     # Segment the volume
     segmented_volume, skel_label = segment_volume(filtered_array, G, args.voxel_size, attribute=args.segmentation_attribute)
 
@@ -109,6 +113,10 @@ def main(args):
         
 def parse_args():
     parser = argparse.ArgumentParser(description="Pipeline for processing and visualizing skeletonized blood vessel volumes.")
+    
+    # Pulling in adjacent branches
+    parser.add_argument('pull_adjacent_branches', type=str, help="Whether to pull in adjacent branches for a given segmentation label (for large radius vessels)")
+    parser.add_argument('large_vessels_label', type=str, help="Label for the vessel system for which we are pulling in adjacent branches")
     
     # General parameters
     parser.add_argument('input_file', type=str, help="Path to the input HDF5 file")
@@ -179,6 +187,9 @@ if __name__ == "__main__":
     else:
         # Manually set args for testing in an IDE
         class Args:
+            pull_adjacent_branches = True # Whether to pull in adjacent branches for a given segmentation label (for large radius vessels)
+            large_vessels_label = None if not pull_adjacent_branches else 2 # Label for the vessel system for which we are pulling in adjacent branches
+    
             input_file = r"C:\Users\14132\Desktop\BC Research Internship\Vessel2Graph\macaque_mpi_176-240nm_bv_gt_cc.h5"  # Path to the input HDF5 file
             dataset_name = 'main'  # Name of the dataset in the HDF5 file
             output_file = 'label_segmented_macaque_vessels.h5'  # Name of the output HDF5 file
