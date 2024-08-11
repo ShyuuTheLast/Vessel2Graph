@@ -323,7 +323,7 @@ def relabel_adjacent_branches(G, target_label):
     for node in G.nodes:
         if('label' in G.nodes[node] and G.nodes[node]['label'] == target_label):
             for neighbor in G.neighbors(node):
-                if('label' in G.nodes[neighbor] and G.nodes[neighbor]['label'] != target_label and G.nodes[neighbor]['branch'] not in branches):
+                if('label' in G.nodes[neighbor] and G.nodes[neighbor]['label'] != target_label and 'branch' in G.nodes[neighbor] and G.nodes[neighbor]['branch'] not in branches):
                     branches.append(G.nodes[neighbor]['branch'])
 
     # Relabel each of the branches in the list to target_label
