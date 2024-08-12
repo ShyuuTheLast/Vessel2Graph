@@ -418,7 +418,7 @@ def calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_l
     
     # Find the furthest distance
     max_distance = max(distances.values())
-    print(f"The furthest distance from a large branch is: {max_distance}")
+    print(f"The largest distance from a large branch is: {max_distance - 1}")
     
     return distances
 
