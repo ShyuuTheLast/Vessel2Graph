@@ -234,14 +234,18 @@ def cluster_radius(rep_rad, optimal_clusters):
     - optimal_clusters (int): The chosen number of clusters.
 
     Returns:
-    - tuple: Cluster labels for each median and the unique labels.
+    - tuple: Cluster labels for each median and the label of the cluster with the largest values.
     """
     # Set the environment variable to avoid memory leaks
     os.environ["OMP_NUM_THREADS"] = "1"
 
     kmeans = KMeans(n_clusters=optimal_clusters, n_init=10, random_state=42).fit(np.array(rep_rad).reshape(-1, 1))
     labels = kmeans.labels_ + 1  # Add 1 to each label
-    return labels
+    
+    # Identify the label of the cluster with the largest values
+    largest_cluster_label = np.argmax(kmeans.cluster_centers_) + 1
+    
+    return labels, largest_cluster_label
 
 def relabel_graph_with_branches(G, unique_paths, labels, rep_rad, means):
     """
@@ -342,9 +346,11 @@ def calculate_branching_angles(G, branch_points):
 
     Returns:
     - dict: A dictionary with tuples of branch indices as keys and branching angles as values.
+    - networkx.Graph: A graph where each node represents a branch, and edges represent connectivity between branches.
     """
     branching_angles = {}
-
+    branch_connectivity_graph = nx.Graph()
+    
     for branch_point in branch_points.keys():
         neighbors = list(G.neighbors(branch_point))
 
@@ -357,21 +363,87 @@ def calculate_branching_angles(G, branch_points):
         for i, neighbor1 in enumerate(neighbors):
             for j, neighbor2 in enumerate(neighbors):
                 if i < j:  # Avoid repeating pairs
-                    vector1 = vectors[neighbor1]
-                    vector2 = vectors[neighbor2]
-
-                    # Calculate the angle between the two vectors
-                    cosine_angle = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
-                    angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
+                    if 'branch' in G.nodes[neighbor1] and 'branch' in G.nodes[neighbor2]:    
+                        vector1 = vectors[neighbor1]
+                        vector2 = vectors[neighbor2]
+    
+                        # Calculate the angle between the two vectors
+                        cosine_angle = np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2))
+                        angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
                     
-                    if 'branch' in G.nodes[neighbor1] and 'branch' in G.nodes[neighbor2]:
                         # Store the angle with the pair of neighbors as the key
                         key = tuple(sorted((G.nodes[neighbor1]['branch'], G.nodes[neighbor2]['branch'])))
                         if key not in branching_angles:
                             branching_angles[key] = []
                         branching_angles[key].append(np.degrees(angle))
+                        
+                        # Add an edge between the two branches in the connectivity graph
+                        branch_connectivity_graph.add_edge(G.nodes[neighbor1]['branch'], G.nodes[neighbor2]['branch'])
 
-    return branching_angles
+                        # Add node attributes to the connectivity graph for each branch
+                        branch_connectivity_graph.nodes[G.nodes[neighbor1]['branch']]['label'] = G.nodes[neighbor1]['label']
+                        branch_connectivity_graph.nodes[G.nodes[neighbor2]['branch']]['label'] = G.nodes[neighbor2]['label']
+
+    return branching_angles, branch_connectivity_graph
+
+def calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_label):
+    """
+    Calculate the distance of each branch from the nearest branch in the largest cluster.
+
+    Parameters:
+    - branch_connectivity_graph (networkx.Graph): The graph where nodes represent branches.
+    - largest_cluster_label (int): The label of the largest cluster of branches.
+
+    Returns:
+    - dict: A dictionary with branch indices as keys and distances as values.
+    """
+    # Identify nodes (branches) in the largest cluster
+    largest_cluster_nodes = [
+        node for node, data in branch_connectivity_graph.nodes(data=True)
+        if data['label'] == largest_cluster_label
+    ]
+
+    # Initialize distances with a large number (infinity)
+    distances = {node: float('inf') for node in branch_connectivity_graph.nodes()}
+
+    # Set the distance to 0 for all nodes in the largest cluster
+    for node in largest_cluster_nodes:
+        distances[node] = 1
+
+    # Use BFS to calculate the shortest distance to the largest cluster
+    for node in largest_cluster_nodes:
+        for neighbor in nx.bfs_tree(branch_connectivity_graph, source=node):
+            # Only update if the current path is shorter
+            distances[neighbor] = min(distances[neighbor], distances[node] + 1)
+    
+    # Find the furthest distance
+    max_distance = max(distances.values())
+    print(f"The furthest distance from a large branch is: {max_distance}")
+    
+    return distances
+
+def propagate_distances_to_original_graph(G, branch_connectivity_graph, distances):
+    """
+    Propagate the "distance_from_largest" attribute to the original graph G.
+
+    Parameters:
+    - G (networkx.Graph): The original graph containing the skeleton data.
+    - branch_connectivity_graph (networkx.Graph): The branch connectivity graph.
+    - distances (dict): A dictionary with branch indices as keys and distances as values.
+
+    Returns:
+    - networkx.Graph: The original graph G with the "distance_from_largest" attribute added to each node.
+    """
+    # Iterate through the nodes in the original graph G
+    for node in G.nodes:
+        if 'branch' in G.nodes[node]:
+            branch_index = G.nodes[node]['branch']
+            if branch_index in distances:
+                G.nodes[node]['dist_from_largest'] = distances[branch_index]
+            else:
+                G.nodes[node]['dist_from_largest'] = -1
+
+    return G
 
 def get_ellipsoid_surface(radius, scaling_factors):
     """

@@ -6,3 +6,4 @@ src/macaque_original_isotropy_skeleton.npz
 src/macaque_stats.npz
 src/output_skeleton.npz
 src/test.npz
+*.h5
