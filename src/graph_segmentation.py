@@ -320,10 +320,12 @@ def relabel_adjacent_branches(G, target_label):
     #list of branch indices we are pulling in
     branches = list()
 
+    original_labels = {node: G.nodes[node]['label'] for node in G.nodes}
+
     for node in G.nodes:
-        if('label' in G.nodes[node] and G.nodes[node]['label'] == target_label):
+        if('label' in G.nodes[node] and original_labels[node] == target_label):
             for neighbor in G.neighbors(node):
-                if('label' in G.nodes[neighbor] and G.nodes[neighbor]['label'] != target_label and 'branch' in G.nodes[neighbor] and G.nodes[neighbor]['branch'] not in branches):
+                if('label' in G.nodes[neighbor] and original_labels[neighbor] != target_label and 'branch' in G.nodes[neighbor] and G.nodes[neighbor]['branch'] not in branches):
                     branches.append(G.nodes[neighbor]['branch'])
 
     # Relabel each of the branches in the list to target_label
