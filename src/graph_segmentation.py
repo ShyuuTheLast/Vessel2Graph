@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 import scipy.ndimage as ndi
+from collections import deque
 
 def skeletonize_volume(volume, teasar_params, anisotropy):
     """
@@ -438,28 +439,28 @@ def calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_l
     Returns:
     - dict: A dictionary with branch indices as keys and distances as values.
     """
-    # Identify nodes (branches) in the largest cluster
-    largest_cluster_nodes = [
-        node for node, data in branch_connectivity_graph.nodes(data=True)
-        if data['label'] == largest_cluster_label
-    ]
-
-    # Initialize distances with a large number (infinity)
     distances = {node: float('inf') for node in branch_connectivity_graph.nodes()}
 
-    # Set the distance to 0 for all nodes in the largest cluster
-    for node in largest_cluster_nodes:
-        distances[node] = 1
+    # Identify nodes in the largest cluster and initialize their distances
+    queue = deque()
+    for node in branch_connectivity_graph.nodes:
+        if branch_connectivity_graph.nodes[node]['label'] == largest_cluster_label:
+            distances[node] = 1  # Start with distance 1
+            queue.append(node)
 
-    # Use BFS to calculate the shortest distance to the largest cluster
-    for node in largest_cluster_nodes:
-        for neighbor in nx.bfs_tree(branch_connectivity_graph, source=node):
-            # Only update if the current path is shorter
-            distances[neighbor] = min(distances[neighbor], distances[node] + 1)
+    # Perform BFS from all nodes in the largest cluster
+    while queue:
+        current_node = queue.popleft()
+        current_distance = distances[current_node]
+
+        for neighbor in branch_connectivity_graph.neighbors(current_node):
+            if distances[neighbor] > current_distance + 1:
+                distances[neighbor] = current_distance + 1
+                queue.append(neighbor)
     
     # Find the furthest distance
     max_distance = max(distances.values())
-    print(f"The largest distance from a large branch is: {max_distance - 1}")
+    print(f"The largest distance (1 based index) from a large branch is: {max_distance}")
     
     return distances
 
