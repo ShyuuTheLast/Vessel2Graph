@@ -386,6 +386,47 @@ def calculate_branching_angles(G, branch_points):
 
     return branching_angles, branch_connectivity_graph
 
+def post_process_branch_labels(G, branch_connectivity_graph, largest_cluster_label, unique_paths):
+    """
+    Post-process the branch labels to merge small branches sandwiched between two large branches.
+
+    Parameters:
+    - G (networkx.Graph): The original graph containing the skeleton data.
+    - branch_connectivity_graph (networkx.Graph): The branch connectivity graph.
+    - largest_cluster_label (int): The label of the largest cluster of branches.
+    - unique_paths (list): A list of unique paths, where each path contains tuples of (coords, radius) for each branch.
+
+    Returns:
+    - networkx.Graph: The updated branch connectivity graph.
+    - networkx.Graph: The original graph G with updated branch labels.
+    """
+    branches_to_relabel = set()
+
+    # Identify branches sandwiched by large branches
+    for node in branch_connectivity_graph.nodes:
+        neighbors = list(branch_connectivity_graph.neighbors(node))
+        
+        # Check if at least 2 neighbors are part of the largest cluster
+        if len(neighbors) >= 2:
+            large_neighbors = [
+                neighbor for neighbor in neighbors
+                if branch_connectivity_graph.nodes[neighbor]['label'] == largest_cluster_label
+            ]
+            if len(large_neighbors) >= 2:
+                branches_to_relabel.add(node)
+
+    # Relabel the identified branches in both graphs
+    for branch in branches_to_relabel:
+        # Relabel the branch in branch_connectivity_graph
+        branch_connectivity_graph.nodes[branch]['label'] = largest_cluster_label
+        
+        # Relabel all nodes in the corresponding branch in the original graph G using unique_paths
+        for coord, _ in unique_paths[branch - 1]:  # Assuming branch is 1-based index
+            if 'branch' in G.nodes[coord] and G.nodes[coord]['branch'] == branch:
+                G.nodes[coord]['label'] = largest_cluster_label
+
+    return branch_connectivity_graph, G
+
 def calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_label):
     """
     Calculate the distance of each branch from the nearest branch in the largest cluster.

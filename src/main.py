@@ -6,7 +6,8 @@ from graph_segmentation import (
     skeletonize_volume, full_graph_generation, get_branch_points, get_end_points,
     get_neighbor_counts, simplified_graph_generation, plot_elbow_curve, 
     cluster_radius, relabel_graph_with_branches, label_branch_points, calculate_branching_angles, 
-    calculate_distance_from_largest, propagate_distances_to_original_graph, segment_volume
+    post_process_branch_labels, calculate_distance_from_largest, 
+    propagate_distances_to_original_graph, segment_volume
 )
 from data_saver import (
     save_skeleton_to_file, save_segmented_volume, save_stats, graph2video
@@ -69,6 +70,8 @@ def main(args):
     G = label_branch_points(G,branch_points)
     
     branching_angles, branch_connectivity_graph = calculate_branching_angles(G, branch_points)
+    
+    branch_connectivity_graph, G = post_process_branch_labels(G, branch_connectivity_graph, largest_cluster_label, unique_paths)
     
     distances = calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_label)
 
@@ -185,7 +188,7 @@ if __name__ == "__main__":
         class Args:
             input_file = r"C:\Users\14132\Desktop\BC Research Internship\Vessel2Graph\macaque_mpi_176-240nm_bv_gt_cc.h5"  # Path to the input HDF5 file
             dataset_name = 'main'  # Name of the dataset in the HDF5 file
-            output_file = 'dist_segmented_macaque_vessels.h5'  # Name of the output HDF5 file
+            output_file = 'label_segmented_macaque_vessels.h5'  # Name of the output HDF5 file
             voxel_size = (320, 256, 256)  # Voxel sizes in z, y, x order
             
             generate_new_skeleton = False  # Set to False to use existing skeletons
@@ -196,7 +199,7 @@ if __name__ == "__main__":
             skeleton_output_path = "macaque_original_isotropy_skeleton.npz"
             
             target_labels = [1]  # Labels to keep in the array
-            segmentation_attribute = 'dist_from_largest'  # Current options: branch, label, radius, dist_from_largest
+            segmentation_attribute = 'label'  # Current options: branch, label, radius, dist_from_largest
             
             scale_factor = 1920  # Scale factor for visualization
             visualize_skeleton = False  # Whether to visualize the skeleton
