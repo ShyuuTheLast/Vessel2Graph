@@ -73,9 +73,9 @@ def main(args):
     
     branch_connectivity_graph, G = post_process_branch_labels(G, branch_connectivity_graph, largest_cluster_label, unique_paths)
     
-    distances = calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_label)
+    #distances = calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_label)
 
-    G = propagate_distances_to_original_graph(G, branch_connectivity_graph, distances)
+    #G = propagate_distances_to_original_graph(G, branch_connectivity_graph, distances)
     
     # Save the stats
     save_stats(args.stats_output_path, branch_points, end_points, neighbor_counts, branch_info, total_length, branching_angles)
