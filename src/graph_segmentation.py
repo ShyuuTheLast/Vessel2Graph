@@ -309,31 +309,120 @@ def relabel_graph_with_branches(G, unique_paths, labels, rep_rad, means):
 
     return G, branch_info, total_length
 
-def label_branch_points(G, branch_points):
+def process_and_relabel_branch_end(G, path, node, is_start_node, branch_points, largest_cluster_label):
     """
-    Label branch points with the same label as their non-branch_point neighbor with the largest radius.
+    Process the start or end of a branch path, checking for branch points and relabeling nodes.
 
     Parameters:
-    - G (networkx.Graph): The graph containing the skeleton data.
-    - branch_points (list): A list of branch point nodes.
+    - G (networkx.Graph): The original graph containing the skeleton data.
+    - path (list): A list of (coords, radius) tuples representing the branch path.
+    - node (tuple): The coordinates of the start or end node.
+    - is_start_node (bool): Whether the node is the start of the path.
+    - branch_points (dict): A dictionary containing branch point nodes as keys.
+    - largest_cluster_label (int): The label of the largest cluster of branches.
 
     Returns:
-    - networkx.Graph: The graph with branch points labeled.
+    - set: A set of nodes to relabel.
+    """
+    nodes_to_relabel = set()
+
+    # Check if the node is connected to a branch point
+    branch_point = next((n for n in G.neighbors(node) if n in branch_points), None)
+
+    if branch_point:
+        # Check if the branch point is connected to a large branch
+        is_connected_to_large = any(G.nodes[neighbor].get('label') == largest_cluster_label for neighbor in G.neighbors(branch_point))
+        if is_connected_to_large:
+            branch_point_radius = G.nodes[branch_point]['radius']
+            # Determine the traversal order based on whether it's a start or end node
+            path_to_check = path if is_start_node else reversed(path)
+
+            for coord, _ in path_to_check:
+                # Check if the current node is within the radius of the branch point
+                distance = np.linalg.norm(np.array(coord) - np.array(branch_point))
+                if distance <= branch_point_radius:
+                    nodes_to_relabel.add(coord)
+                else:
+                    break  # No need to continue if we're outside the radius
+
+    return nodes_to_relabel
+
+def relabel_small_branches_near_big_ones(G, branch_connectivity_graph, largest_cluster_label, unique_paths, branch_points):
+    """
+    Relabel nodes in small branches that are neighboring big branches within a certain radius.
+
+    Parameters:
+    - G (networkx.Graph): The original graph containing the skeleton data.
+    - branch_connectivity_graph (networkx.Graph): The branch connectivity graph.
+    - largest_cluster_label (int): The label of the largest cluster of branches.
+    - unique_paths (list): A list of unique paths, where each path contains tuples of (coords, radius) for each branch.
+    - branch_points (dict): A dictionary containing branch point nodes as keys.
+
+    Returns:
+    - networkx.Graph: The original graph G with updated node labels.
+    """
+    all_nodes_to_relabel = set()
+
+    # Locate big branches and their neighbors
+    big_branches = [node for node in branch_connectivity_graph.nodes if branch_connectivity_graph.nodes[node]['label'] == largest_cluster_label]
+    
+    for big_branch in big_branches:
+        neighbors = list(branch_connectivity_graph.neighbors(big_branch))
+        
+        for neighbor_branch in neighbors:
+            # Process the start and end nodes of the neighbor branch
+            path = unique_paths[neighbor_branch - 1]  # Get the nodes and radii for the neighbor branch
+            start_node, end_node = path[0][0], path[-1][0]
+
+            # Process the start node
+            start_nodes_to_relabel = process_and_relabel_branch_end(G, path, start_node, is_start_node=True, branch_points=branch_points, largest_cluster_label=largest_cluster_label)
+            all_nodes_to_relabel.update(start_nodes_to_relabel)
+
+            # Process the end node
+            end_nodes_to_relabel = process_and_relabel_branch_end(G, path, end_node, is_start_node=False, branch_points=branch_points, largest_cluster_label=largest_cluster_label)
+            all_nodes_to_relabel.update(end_nodes_to_relabel)
+
+    # Relabel all marked nodes
+    for node in all_nodes_to_relabel:
+        G.nodes[node]['label'] = largest_cluster_label
+
+    return G
+
+def label_branch_points(G, branch_points, largest_cluster_label):
+    """
+    Label the branch points in the graph G. Each branch point will be labeled with the 
+    label of the neighboring branch that has the largest radius or belongs to the largest cluster.
+
+    Parameters:
+    - G (networkx.Graph): The original graph containing the skeleton data.
+    - branch_points (dict): A dictionary containing branch point nodes as keys.
+
+    Returns:
+    - networkx.Graph: The graph G with updated labels for the branch points.
     """
     for branch_point in branch_points:
-        neighbors = list(G.neighbors(branch_point))
+        # Retrieve the labels of all neighboring branches
+        neighbor_labels = [
+            G.nodes[neighbor]['label']
+            for neighbor in G.neighbors(branch_point)
+            if 'label' in G.nodes[neighbor]
+        ]
         
-        max_radius = -1
-        selected_label = None
-        for neighbor in neighbors:
-            if neighbor not in branch_points:
-                radius = G.nodes[neighbor]['radius']
-                if radius > max_radius and 'label' in G.nodes[neighbor]:
-                    max_radius = radius
-                    selected_label = G.nodes[neighbor]['label']
-
-        if selected_label is not None:
-            G.nodes[branch_point]['label'] = selected_label
+        if neighbor_labels:
+            # Prioritize labeling with the largest cluster's label if available
+            if largest_cluster_label in neighbor_labels:
+                G.nodes[branch_point]['label'] = largest_cluster_label
+            else:
+                # If largest cluster label is not present, use the label of the branch with the largest radius
+                neighbor_radii = [
+                    G.nodes[neighbor]['radius']
+                    for neighbor in G.neighbors(branch_point)
+                    if 'radius' in G.nodes[neighbor]
+                ]
+                if neighbor_radii:
+                    # Find the label of the branch with the maximum radius
+                    max_radius_index = neighbor_radii.index(max(neighbor_radii))
+                    G.nodes[branch_point]['label'] = neighbor_labels[max_radius_index]
 
     return G
 

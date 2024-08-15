@@ -5,7 +5,7 @@ from data_loader import load_hdf5, load_existing_skeletons
 from graph_segmentation import (
     skeletonize_volume, full_graph_generation, get_branch_points, get_end_points,
     get_neighbor_counts, simplified_graph_generation, plot_elbow_curve, 
-    cluster_radius, relabel_graph_with_branches, label_branch_points, calculate_branching_angles, 
+    cluster_radius, relabel_graph_with_branches, relabel_small_branches_near_big_ones, label_branch_points, calculate_branching_angles, 
     post_process_branch_labels, calculate_distance_from_largest, 
     propagate_distances_to_original_graph, segment_volume
 )
@@ -42,48 +42,59 @@ def main(args):
         for key, value in skeletons.items():
             print(f"Key: {key}, Number of vertices: {value.vertices.shape[0]}")
             
-    # Generate the full graph
+    # Generate the full graph from the skeletons
     G = full_graph_generation(skeletons)
-
-    # Get branch points and end points
+    
+    # Get branch points and end points in the graph
     branch_points = get_branch_points(G)
     end_points = get_end_points(G)
+    
+    # Get the count of neighbors for each branch point
     neighbor_counts = get_neighbor_counts(G, branch_points)
     
+    # Debug information: Print the number of branch and end points if debugging is enabled
     if args.debug:
         print("Number of branch points:", len(branch_points))
         print("Number of end points:", len(end_points))
     
-    # Generate the simplified graph
+    # Generate a simplified version of the graph along with path details
     simplified_G, unique_paths, medians, means = simplified_graph_generation(G, branch_points, end_points)
-
-    # Plot the elbow curve to determine the optimal number of clusters
+    
+    # Plot the elbow curve to help determine the optimal number of clusters for k-means
     plot_elbow_curve(medians)
     optimal_clusters = int(input("Enter the optimal number of clusters: "))
-
-    # Cluster the medians
+    
+    # Cluster the medians of the branches to classify them into different groups
     labels, largest_cluster_label = cluster_radius(medians, optimal_clusters)
-
-    # Relabel the graph and get branch details and total length
+    
+    # Relabel the original graph with branch indices, calculate branch details and the total length of the skeleton
     G, branch_info, total_length = relabel_graph_with_branches(G, unique_paths, labels, medians, means)
     
-    G = label_branch_points(G,branch_points)
-    
+    # Calculate the branching angles and create a graph to represent branch connectivity
     branching_angles, branch_connectivity_graph = calculate_branching_angles(G, branch_points)
     
+    # Post-process the branch labels to merge small branches that are between large branches
     branch_connectivity_graph, G = post_process_branch_labels(G, branch_connectivity_graph, largest_cluster_label, unique_paths)
     
+    # Relabel nodes in small branches that are neighboring large branches
+    G = relabel_small_branches_near_big_ones(G, branch_connectivity_graph, largest_cluster_label, unique_paths, branch_points)
+    
+    # Label the branch points in the graph with the correct branch labels
+    G = label_branch_points(G, branch_points, largest_cluster_label)
+    
+    # Calculate the distance from each branch to the nearest branch in the largest cluster
     distances = calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_label)
-
+    
+    # Propagate these distances back to the original graph
     G = propagate_distances_to_original_graph(G, branch_connectivity_graph, distances)
     
-    # Save the stats
+    # Save all the calculated statistics (branch points, end points, etc.) to a file
     save_stats(args.stats_output_path, branch_points, end_points, neighbor_counts, branch_info, total_length, branching_angles)
-
-    # Segment the volume
+    
+    # Segment the volume using the graph's node attributes (e.g., label or radius)
     segmented_volume, skel_label = segment_volume(filtered_array, G, args.voxel_size, attribute=args.segmentation_attribute)
-
-    # Save the segmented volume
+    
+    # Save the segmented volume to an HDF5 file
     save_segmented_volume(segmented_volume, skel_label, args.output_file)
     
     # Visualizations
