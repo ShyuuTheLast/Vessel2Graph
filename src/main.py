@@ -6,7 +6,8 @@ from graph_segmentation import (
     skeletonize_volume, full_graph_generation, get_branch_points, get_end_points,
     get_neighbor_counts, simplified_graph_generation, plot_elbow_curve, 
     cluster_radius, relabel_graph_with_branches, relabel_small_branches_near_big_ones, label_branch_points, calculate_branching_angles,
-    calculate_distance_from_largest, propagate_distances_to_original_graph, segment_volume
+    calculate_distance_from_largest, propagate_distances_to_original_graph, remove_small_components_cc3d, 
+    segment_volume
 )
 from data_saver import (
     save_skeleton_to_file, save_segmented_volume, save_stats, graph2video
@@ -91,8 +92,10 @@ def main(args):
     # Segment the volume using the graph's node attributes (e.g., label or radius)
     segmented_volume, skel_label = segment_volume(filtered_array, G, args.voxel_size, attribute=args.segmentation_attribute)
     
+    cleaned_volume = remove_small_components_cc3d(segmented_volume, threshold_ratio=0.05, connectivity=26)
+    
     # Save the segmented volume to an HDF5 file
-    save_segmented_volume(segmented_volume, skel_label, args.output_file)
+    save_segmented_volume(cleaned_volume, skel_label, args.output_file)
     
     # Visualizations
     if args.visualize_skeleton:

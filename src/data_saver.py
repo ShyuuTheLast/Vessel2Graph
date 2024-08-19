@@ -34,13 +34,12 @@ def save_skeleton_to_file(skeletons, output_path):
     np.savez_compressed(output_path, skeletons=skeletons)
     print(f"Skeletons saved to {output_path}")
 
-def save_segmented_volume(filtered_array, skel_label, file_name):
+def save_segmented_volume(filtered_array, file_name):
     """
     Save the segmented volume as an HDF5 file with compression.
 
     Parameters:
     - filtered_array (np.ndarray): The segmented volume to be saved.
-    - skel_label (list): The unique labels in the segmented volume.
     - file_name (str): The name of the output file.
 
     Returns:

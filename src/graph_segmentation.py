@@ -1,5 +1,6 @@
 # src/graph_segmentation.py
 import os
+import cc3d
 import kimimaro
 import networkx as nx
 import numpy as np
@@ -633,3 +634,34 @@ def segment_volume(filtered_array, G, voxel_size, attribute='label'):
     skel_label = sorted(unique_labels)
 
     return filtered_array, skel_label
+
+def remove_small_components_cc3d(segmented_volume, threshold_ratio=0.05, connectivity=26):
+    """
+    Remove small components from the segmented volume based on connected component analysis using cc3d.
+
+    Parameters:
+    - segmented_volume (np.ndarray): The segmented 3D volume.
+    - threshold_ratio (float): Threshold ratio relative to the size of the largest component.
+    - connectivity (int): The connectivity for connected component analysis (26 for full 3D connectivity).
+
+    Returns:
+    - np.ndarray: The cleaned-up segmented volume.
+    """
+    # Perform connected component labeling using cc3d
+    labels_out = cc3d.connected_components(segmented_volume, connectivity=connectivity)
+    
+    # Get the size of each component
+    component_sizes = np.bincount(labels_out.flat)
+    
+    # Ignore the background component (label 0)
+    component_sizes[0] = 0
+    
+    # Calculate the threshold based on the largest component
+    largest_component_size = component_sizes.max()
+    size_threshold = largest_component_size * threshold_ratio
+    
+    # Create a mask that keeps only components larger than the threshold
+    keep_labels = np.where(component_sizes >= size_threshold)[0]
+    cleaned_volume = np.isin(labels_out, keep_labels) * segmented_volume
+    
+    return cleaned_volume
