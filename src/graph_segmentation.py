@@ -401,28 +401,28 @@ def label_branch_points(G, branch_points, largest_cluster_label):
     - networkx.Graph: The graph G with updated labels for the branch points.
     """
     for branch_point in branch_points:
-        # Retrieve the labels of all neighboring branches
-        neighbor_labels = [
-            G.nodes[neighbor]['label']
+
+        #retrieve the labels and radii of all neighboring branches
+        neighbor_data =[
+            (G.nodes[neighbor].get('label', None), G.nodes[neighbor].get('radius', None))
             for neighbor in G.neighbors(branch_point)
-            if 'label' in G.nodes[neighbor]
         ]
-        
-        if neighbor_labels:
-            # Prioritize labeling with the largest cluster's label if available
+
+        #only use points with both a label and radius
+        neighbor_data = [(label, radius) for label, radius in neighbor_data if label is not None and radius is not None]
+
+        if neighbor_data:
+            neighbor_labels = [label for label, radius in neighbor_data]
+            neighbor_radii = [radius for label, radius in neighbor_data]
+            
+            #first use largest cluster label if available
             if largest_cluster_label in neighbor_labels:
                 G.nodes[branch_point]['label'] = largest_cluster_label
-            else:
-                # If largest cluster label is not present, use the label of the branch with the largest radius
-                neighbor_radii = [
-                    G.nodes[neighbor]['radius']
-                    for neighbor in G.neighbors(branch_point)
-                    if 'radius' in G.nodes[neighbor]
-                ]
-                if neighbor_radii:
-                    # Find the label of the branch with the maximum radius
-                    max_radius_index = neighbor_radii.index(max(neighbor_radii))
-                    G.nodes[branch_point]['label'] = neighbor_labels[max_radius_index]
+
+            #otherwise use the label of the branch with the largest radius
+            else:  
+                max_radius_index = neighbor_radii.index(max(neighbor_radii))
+                G.nodes[branch_point]['label'] = neighbor_labels[max_radius_index]
 
     return G
 
