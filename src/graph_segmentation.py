@@ -245,6 +245,7 @@ def cluster_radius(rep_rad, optimal_clusters):
     
     # Identify the label of the cluster with the largest values
     largest_cluster_label = np.argmax(kmeans.cluster_centers_) + 1
+    print(f"The label corresponding to the cluster with largest average radii is {largest_cluster_label}")
     
     return labels, largest_cluster_label
 
@@ -350,6 +351,8 @@ def process_and_relabel_branch_end(G, path, node, is_start_node, branch_points, 
 def relabel_small_branches_near_big_ones(G, branch_connectivity_graph, largest_cluster_label, unique_paths, branch_points):
     """
     Relabel nodes in small branches that are neighboring big branches within a certain radius.
+    Also merges functionality of post-processing branch labels to handle the scenario where
+    small branches are sandwiched between two large branches.
 
     Parameters:
     - G (networkx.Graph): The original graph containing the skeleton data.
@@ -362,6 +365,7 @@ def relabel_small_branches_near_big_ones(G, branch_connectivity_graph, largest_c
     - networkx.Graph: The original graph G with updated node labels.
     """
     all_nodes_to_relabel = set()
+    branches_to_relabel = set()
 
     # Locate big branches and their neighbors
     big_branches = [node for node in branch_connectivity_graph.nodes if branch_connectivity_graph.nodes[node]['label'] == largest_cluster_label]
@@ -381,12 +385,21 @@ def relabel_small_branches_near_big_ones(G, branch_connectivity_graph, largest_c
             # Process the end node
             end_nodes_to_relabel = process_and_relabel_branch_end(G, path, end_node, is_start_node=False, branch_points=branch_points, largest_cluster_label=largest_cluster_label)
             all_nodes_to_relabel.update(end_nodes_to_relabel)
+            
+            # Check if both start and end are connected to large branches
+            if start_nodes_to_relabel and end_nodes_to_relabel:
+                # If both ends are connected to large branches, mark the entire branch for relabeling
+                all_nodes_to_relabel.update({coord for coord, _ in path})
+                branches_to_relabel.add(neighbor_branch)
 
     # Relabel all marked nodes
     for node in all_nodes_to_relabel:
         G.nodes[node]['label'] = largest_cluster_label
+        
+    for branch in branches_to_relabel:
+        branch_connectivity_graph.nodes[branch]['label'] = largest_cluster_label
 
-    return G
+    return G, branch_connectivity_graph
 
 def label_branch_points(G, branch_points, largest_cluster_label):
     """
@@ -422,7 +435,7 @@ def label_branch_points(G, branch_points, largest_cluster_label):
                 if neighbor_radii:
                     # Find the label of the branch with the maximum radius
                     max_radius_index = neighbor_radii.index(max(neighbor_radii))
-                    G.nodes[branch_point]['label'] = neighbor_labels[max_radius_index]
+                    G.nodes[branch_point]['label'] = neighbor_radii[max_radius_index]
 
     return G
 
@@ -475,47 +488,6 @@ def calculate_branching_angles(G, branch_points):
                         branch_connectivity_graph.nodes[G.nodes[neighbor2]['branch']]['label'] = G.nodes[neighbor2]['label']
 
     return branching_angles, branch_connectivity_graph
-
-def post_process_branch_labels(G, branch_connectivity_graph, largest_cluster_label, unique_paths):
-    """
-    Post-process the branch labels to merge small branches sandwiched between two large branches.
-
-    Parameters:
-    - G (networkx.Graph): The original graph containing the skeleton data.
-    - branch_connectivity_graph (networkx.Graph): The branch connectivity graph.
-    - largest_cluster_label (int): The label of the largest cluster of branches.
-    - unique_paths (list): A list of unique paths, where each path contains tuples of (coords, radius) for each branch.
-
-    Returns:
-    - networkx.Graph: The updated branch connectivity graph.
-    - networkx.Graph: The original graph G with updated branch labels.
-    """
-    branches_to_relabel = set()
-
-    # Identify branches sandwiched by large branches
-    for node in branch_connectivity_graph.nodes:
-        neighbors = list(branch_connectivity_graph.neighbors(node))
-        
-        # Check if at least 2 neighbors are part of the largest cluster
-        if len(neighbors) >= 2:
-            large_neighbors = [
-                neighbor for neighbor in neighbors
-                if branch_connectivity_graph.nodes[neighbor]['label'] == largest_cluster_label
-            ]
-            if len(large_neighbors) >= 2:
-                branches_to_relabel.add(node)
-
-    # Relabel the identified branches in both graphs
-    for branch in branches_to_relabel:
-        # Relabel the branch in branch_connectivity_graph
-        branch_connectivity_graph.nodes[branch]['label'] = largest_cluster_label
-        
-        # Relabel all nodes in the corresponding branch in the original graph G using unique_paths
-        for coord, _ in unique_paths[branch - 1]:  # Assuming branch is 1-based index
-            if 'branch' in G.nodes[coord] and G.nodes[coord]['branch'] == branch:
-                G.nodes[coord]['label'] = largest_cluster_label
-
-    return branch_connectivity_graph, G
 
 def calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_label):
     """

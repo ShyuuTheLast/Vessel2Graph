@@ -5,9 +5,8 @@ from data_loader import load_hdf5, load_existing_skeletons
 from graph_segmentation import (
     skeletonize_volume, full_graph_generation, get_branch_points, get_end_points,
     get_neighbor_counts, simplified_graph_generation, plot_elbow_curve, 
-    cluster_radius, relabel_graph_with_branches, relabel_small_branches_near_big_ones, label_branch_points, calculate_branching_angles, 
-    post_process_branch_labels, calculate_distance_from_largest, 
-    propagate_distances_to_original_graph, segment_volume
+    cluster_radius, relabel_graph_with_branches, relabel_small_branches_near_big_ones, label_branch_points, calculate_branching_angles,
+    calculate_distance_from_largest, propagate_distances_to_original_graph, segment_volume
 )
 from data_saver import (
     save_skeleton_to_file, save_segmented_volume, save_stats, graph2video
@@ -73,11 +72,9 @@ def main(args):
     # Calculate the branching angles and create a graph to represent branch connectivity
     branching_angles, branch_connectivity_graph = calculate_branching_angles(G, branch_points)
     
-    # Post-process the branch labels to merge small branches that are between large branches
-    branch_connectivity_graph, G = post_process_branch_labels(G, branch_connectivity_graph, largest_cluster_label, unique_paths)
-    
-    # Relabel nodes in small branches that are neighboring large branches
-    G = relabel_small_branches_near_big_ones(G, branch_connectivity_graph, largest_cluster_label, unique_paths, branch_points)
+    if args.relabel_nodes:
+        # Relabel nodes in small branches that are neighboring large branches
+        G, branch_connectivity_graph = relabel_small_branches_near_big_ones(G, branch_connectivity_graph, largest_cluster_label, unique_paths, branch_points)
     
     # Label the branch points in the graph with the correct branch labels
     G = label_branch_points(G, branch_points, largest_cluster_label)
@@ -147,6 +144,7 @@ def parse_args():
     
     # Segmentation and 
     parser.add_argument('--target_labels', type=int, nargs='+', default=[1], help="Labels to keep in the array")
+    parser.add_argument('--relabel_nodes', action='store_true', help="Whether to relabel nodes of small branches near large branches to big")
     parser.add_argument('--segmentation_attribute', type=str, default='label', help="Attribute to segment and visualize by")
     
     #Visualization parameters
@@ -210,6 +208,7 @@ if __name__ == "__main__":
             skeleton_output_path = "macaque_original_isotropy_skeleton.npz"
             
             target_labels = [1]  # Labels to keep in the array
+            relabel_nodes = True
             segmentation_attribute = 'label'  # Current options: branch, label, radius, dist_from_largest
             
             scale_factor = 1920  # Scale factor for visualization
