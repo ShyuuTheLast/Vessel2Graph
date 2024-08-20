@@ -236,7 +236,8 @@ def cluster_radius(rep_rad, optimal_clusters):
     - optimal_clusters (int): The chosen number of clusters.
 
     Returns:
-    - tuple: Cluster labels for each median and the label of the cluster with the largest values.
+    - tuple: Cluster labels for each median, the label of the cluster with the largest values, 
+      and the label of the cluster with the second-largest values.
     """
     # Set the environment variable to avoid memory leaks
     os.environ["OMP_NUM_THREADS"] = "1"
@@ -244,11 +245,13 @@ def cluster_radius(rep_rad, optimal_clusters):
     kmeans = KMeans(n_clusters=optimal_clusters, n_init=10, random_state=42).fit(np.array(rep_rad).reshape(-1, 1))
     labels = kmeans.labels_ + 1  # Add 1 to each label
     
-    # Identify the label of the cluster with the largest values
-    largest_cluster_label = np.argmax(kmeans.cluster_centers_) + 1
+    # Identify the labels of the clusters with the largest and second-largest values
+    sorted_centroids_indices = np.argsort(kmeans.cluster_centers_.ravel())[::-1]
+    largest_cluster_label = sorted_centroids_indices[0] + 1
+    second_largest_label = sorted_centroids_indices[1] + 1
     print(f"The label corresponding to the cluster with largest average radii is {largest_cluster_label}")
     
-    return labels, largest_cluster_label
+    return labels, largest_cluster_label, second_largest_label
 
 def relabel_graph_with_branches(G, unique_paths, labels, rep_rad, means):
     """
@@ -635,20 +638,26 @@ def segment_volume(filtered_array, G, voxel_size, attribute='label'):
 
     return filtered_array, skel_label
 
-def remove_small_components_cc3d(segmented_volume, threshold_ratio=0.05, connectivity=26):
+def remove_small_components_cc3d(segmented_volume, largest_cluster_label, second_largest_label, threshold_ratio=0.01, connectivity=26):
     """
-    Remove small components from the segmented volume based on connected component analysis using cc3d.
+    Remove small components from the segmented volume for the largest cluster label, and relabel them
+    with the second-largest cluster label.
 
     Parameters:
     - segmented_volume (np.ndarray): The segmented 3D volume.
+    - largest_cluster_label (int): The label of the largest cluster to clean.
+    - second_largest_label (int): The label to assign to small components removed from the largest cluster.
     - threshold_ratio (float): Threshold ratio relative to the size of the largest component.
     - connectivity (int): The connectivity for connected component analysis (26 for full 3D connectivity).
 
     Returns:
     - np.ndarray: The cleaned-up segmented volume.
     """
-    # Perform connected component labeling using cc3d
-    labels_out = cc3d.connected_components(segmented_volume, connectivity=connectivity)
+    # Create a mask for the largest cluster
+    largest_cluster_mask = (segmented_volume == largest_cluster_label)
+    
+    # Perform connected component labeling on the largest cluster only
+    labels_out = cc3d.connected_components(largest_cluster_mask, connectivity=connectivity)
     
     # Get the size of each component
     component_sizes = np.bincount(labels_out.flat)
@@ -660,8 +669,11 @@ def remove_small_components_cc3d(segmented_volume, threshold_ratio=0.05, connect
     largest_component_size = component_sizes.max()
     size_threshold = largest_component_size * threshold_ratio
     
-    # Create a mask that keeps only components larger than the threshold
-    keep_labels = np.where(component_sizes >= size_threshold)[0]
-    cleaned_volume = np.isin(labels_out, keep_labels) * segmented_volume
+    # Identify small components (dust) and relabel them in the original segmented_volume
+    dust_labels = np.where(component_sizes < size_threshold)[0]
+    dust_mask = np.isin(labels_out, dust_labels)
     
-    return cleaned_volume
+    # Relabel dust components with the second largest cluster label
+    segmented_volume[dust_mask] = second_largest_label
+    
+    return segmented_volume

@@ -65,7 +65,7 @@ def main(args):
     optimal_clusters = int(input("Enter the optimal number of clusters: "))
     
     # Cluster the medians of the branches to classify them into different groups
-    labels, largest_cluster_label = cluster_radius(medians, optimal_clusters)
+    labels, largest_cluster_label, second_largest_label = cluster_radius(medians, optimal_clusters)
     
     # Relabel the original graph with branch indices, calculate branch details and the total length of the skeleton
     G, branch_info, total_length = relabel_graph_with_branches(G, unique_paths, labels, medians, means)
@@ -92,10 +92,12 @@ def main(args):
     # Segment the volume using the graph's node attributes (e.g., label or radius)
     segmented_volume, skel_label = segment_volume(filtered_array, G, args.voxel_size, attribute=args.segmentation_attribute)
     
-    cleaned_volume = remove_small_components_cc3d(segmented_volume, threshold_ratio=0.05, connectivity=26)
+    if args.segmentation_attribute == "label":
+        # Perform connected component analysis and relabel dust
+        segmented_volume = remove_small_components_cc3d(segmented_volume, largest_cluster_label, second_largest_label, threshold_ratio=0.01, connectivity=26)
     
     # Save the segmented volume to an HDF5 file
-    save_segmented_volume(cleaned_volume, skel_label, args.output_file)
+    save_segmented_volume(segmented_volume, skel_label, args.output_file)
     
     # Visualizations
     if args.visualize_skeleton:
