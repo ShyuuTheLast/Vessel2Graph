@@ -663,14 +663,14 @@ def remove_small_components_cc3d(segmented_volume, largest_cluster_label, second
     component_sizes = np.bincount(labels_out.flat)
     
     # Ignore the background component (label 0)
-    component_sizes[0] = 0
+    component_sizes[0] = -1
     
     # Calculate the threshold based on the largest component
     largest_component_size = component_sizes.max()
     size_threshold = largest_component_size * threshold_ratio
     
     # Identify small components (dust) and relabel them in the original segmented_volume
-    dust_labels = np.where(component_sizes < size_threshold)[0]
+    dust_labels = np.where((component_sizes > 0) & (component_sizes < size_threshold))[0]  # Exclude background and small components
     dust_mask = np.isin(labels_out, dust_labels)
     
     # Relabel dust components with the second largest cluster label
