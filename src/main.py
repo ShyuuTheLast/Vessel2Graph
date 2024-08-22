@@ -4,7 +4,7 @@ import numpy as np
 from data_loader import load_hdf5, load_existing_skeletons
 from graph_segmentation import (
     skeletonize_volume, full_graph_generation, get_branch_points, get_end_points,
-    get_neighbor_counts, simplified_graph_generation, plot_elbow_curve, 
+    merge_graph_components, get_neighbor_counts, simplified_graph_generation, plot_elbow_curve, 
     cluster_radius, relabel_graph_with_branches, relabel_small_branches_near_big_ones, label_branch_points, calculate_branching_angles,
     calculate_distance_from_largest, propagate_distances_to_original_graph, remove_small_components_cc3d, 
     segment_volume
@@ -37,7 +37,7 @@ def main(args):
     else:
         # Load existing skeletons from the specified path
         skeletons = load_existing_skeletons(args.existing_skeletons_path)
-    
+
     if args.debug:
         for key, value in skeletons.items():
             print(f"Key: {key}, Number of vertices: {value.vertices.shape[0]}")
@@ -48,6 +48,8 @@ def main(args):
     # Get branch points and end points in the graph
     branch_points = get_branch_points(G)
     end_points = get_end_points(G)
+    
+    G, end_points = merge_graph_components(G, end_points)
     
     # Get the count of neighbors for each branch point
     neighbor_counts = get_neighbor_counts(G, branch_points)
@@ -80,24 +82,28 @@ def main(args):
     # Label the branch points in the graph with the correct branch labels
     G = label_branch_points(G, branch_points, largest_cluster_label)
     
-    # Calculate the distance from each branch to the nearest branch in the largest cluster
-    distances = calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_label)
-    
-    # Propagate these distances back to the original graph
-    G = propagate_distances_to_original_graph(G, branch_connectivity_graph, distances)
+    if args.segmentation_attribute == "dist_from_largest":
+        # Calculate the distance from each branch to the nearest branch in the largest cluster
+        distances = calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_label)
+        
+        # Propagate these distances back to the original graph
+        G = propagate_distances_to_original_graph(G, branch_connectivity_graph, distances)
     
     # Save all the calculated statistics (branch points, end points, etc.) to a file
     save_stats(args.stats_output_path, branch_points, end_points, neighbor_counts, branch_info, total_length, branching_angles)
     
     # Segment the volume using the graph's node attributes (e.g., label or radius)
-    segmented_volume, skel_label = segment_volume(filtered_array, G, args.voxel_size, attribute=args.segmentation_attribute)
+    segmented_volume, foreground_mask = segment_volume(filtered_array, G, args.voxel_size, attribute=args.segmentation_attribute)
+    
+    if args.debug:
+        save_segmented_volume(foreground_mask,"foreground_mask")
     
     if args.segmentation_attribute == "label":
         # Perform connected component analysis and relabel dust
         segmented_volume = remove_small_components_cc3d(segmented_volume, largest_cluster_label, second_largest_label, threshold_ratio=0.01, connectivity=26)
     
     # Save the segmented volume to an HDF5 file
-    save_segmented_volume(segmented_volume, skel_label, args.output_file)
+    save_segmented_volume(segmented_volume, args.output_file)
     
     # Visualizations
     if args.visualize_skeleton:
@@ -202,19 +208,18 @@ if __name__ == "__main__":
         class Args:
             input_file = r"C:\Users\14132\Desktop\BC Research Internship\Vessel2Graph\macaque_mpi_176-240nm_bv_gt_cc.h5"  # Path to the input HDF5 file
             dataset_name = 'main'  # Name of the dataset in the HDF5 file
-            output_file = 'label_segmented_macaque_vessels.h5'  # Name of the output HDF5 file
+            output_file = 'down_branch_macaque_vessels.h5'  # Name of the output HDF5 file
             voxel_size = (320, 256, 256)  # Voxel sizes in z, y, x order
             
             generate_new_skeleton = False  # Set to False to use existing skeletons
-            teasar_params = '{"scale": 1.5, "const": 42000, "pdrf_scale": 100000, "pdrf_exponent": 4, "soma_acceptance_threshold": 3500, "soma_detection_threshold": 750, "soma_invalidation_const": 300, "soma_invalidation_scale": 2, "max_paths": 300}'  # JSON string of TEASAR parameters
-            existing_skeletons_path = None if generate_new_skeleton else r"C:\Users\14132\Desktop\Vessel2Graph\src\macaque_original_isotropy_skeleton.npz"
-            
+            teasar_params = '{"scale": 1.5, "const": 30000, "pdrf_scale": 100000, "pdrf_exponent": 4, "soma_acceptance_threshold": 3500, "soma_detection_threshold": 750, "soma_invalidation_const": 300, "soma_invalidation_scale": 2, "max_paths": 300}'  # JSON string of TEASAR parameters
+            existing_skeletons_path = None if generate_new_skeleton else r"C:\Users\14132\Desktop\Vessel2Graph\src\down_macaque_skel.npz"
             save_skeleton = True
             skeleton_output_path = "macaque_original_isotropy_skeleton.npz"
             
             target_labels = [1]  # Labels to keep in the array
             relabel_nodes = True
-            segmentation_attribute = 'label'  # Current options: branch, label, radius, dist_from_largest
+            segmentation_attribute = 'branch'  # Current options: branch, label, radius, dist_from_largest
             
             scale_factor = 1920  # Scale factor for visualization
             visualize_skeleton = False  # Whether to visualize the skeleton

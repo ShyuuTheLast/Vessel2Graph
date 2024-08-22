@@ -9,3 +9,4 @@ src/test.npz
 *.h5
 /venv
 /.vscode
+*.npz

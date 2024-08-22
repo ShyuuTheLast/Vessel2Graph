@@ -94,6 +94,64 @@ def get_end_points(G):
     end_points = {node: (G.nodes[node]['seg_id'], G.nodes[node]['radius']) for node in G.nodes if len(list(G.neighbors(node))) == 1}
     return end_points
 
+def merge_graph_components(G, end_points):
+    """
+    Merge all smaller connected components of the graph G to the largest component
+    by connecting the closest pair of endpoints, one from the largest component and one from a smaller component.
+
+    Parameters:
+    - G (networkx.Graph): The input graph containing the skeleton data.
+    - end_points (dict): A dictionary of end points with node coordinates as keys.
+
+    Returns:
+    - networkx.Graph: The modified graph with components merged.
+    """
+    # Identify all connected components in the graph
+    components = list(nx.connected_components(G))
+
+    # Find the largest connected component
+    largest_component = max(components, key=len)
+    largest_component_end_points = [node for node in largest_component if node in end_points]
+
+    # Iterate through all other components and merge them with the largest one
+    for component in components:
+        if component == largest_component:
+            continue  # Skip the largest component itself
+
+        # Get the end points of the current smaller component
+        smaller_component_end_points = [node for node in component if node in end_points]
+
+        # Find the closest pair of endpoints (one from the largest component and one from the smaller component)
+        min_distance = float('inf')
+        closest_pair = (None, None)
+
+        for node1 in largest_component_end_points:
+            for node2 in smaller_component_end_points:
+                # Calculate Euclidean distance between the two nodes
+                distance = np.linalg.norm(np.array(node1) - np.array(node2))
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_pair = (node1, node2)
+
+        # Add an edge between the closest pair of nodes
+        if closest_pair[0] is not None and closest_pair[1] is not None:
+            G.add_edge(closest_pair[0], closest_pair[1])
+            print(f"Connected node {closest_pair[0]} (largest component) to node {closest_pair[1]} (smaller component) with distance {min_distance}")
+
+            # Remove the connected nodes from end_points
+            end_points.pop(closest_pair[0], None)
+            end_points.pop(closest_pair[1], None)
+
+            # Update largest_component_end_points since the component has grown
+            largest_component_end_points.append(closest_pair[1])
+
+    # Print the number of components remaining in the graph
+    num_components = nx.number_connected_components(G)
+    print(f"Number of components remaining in the graph: {num_components}")
+
+    return G, end_points
+
+
 def traverse_path(G, start, previous, branch_points, end_points):
     """
     Trace a path from a starting point to another branch point or an end point.
@@ -608,12 +666,12 @@ def segment_volume(filtered_array, G, voxel_size, attribute='label'):
 
             # Get the surface voxels of the ellipsoid
             surface_voxels = get_ellipsoid_surface(radius, voxel_size)
-
+     
             # Adjust the node coordinates to match the anisotropic space
             adjusted_node = np.array([int(coord / scale) for coord, scale in zip(node, voxel_size)])
             adjusted_surface_voxels = (surface_voxels + adjusted_node).astype(int)
 
-            # Set the surface voxels in category_indices using advanced indexing
+            # Set the surface voxels in category_indices
             z_coords, y_coords, x_coords = adjusted_surface_voxels.T
             valid_mask = (
                 (z_coords >= 0) & (z_coords < filtered_array.shape[0]) &
@@ -622,10 +680,10 @@ def segment_volume(filtered_array, G, voxel_size, attribute='label'):
             )
             category_indices[z_coords[valid_mask], y_coords[valid_mask], x_coords[valid_mask]] = category
             unique_labels.add(category)
-
+            
     # Create a mask for the foreground voxels in category_indices
     foreground_mask = category_indices != 0
-
+    
     # Compute distance transform from foreground to non-foreground regions
     _, indices = ndi.distance_transform_cdt(~foreground_mask, return_indices=True)
 
@@ -633,10 +691,7 @@ def segment_volume(filtered_array, G, voxel_size, attribute='label'):
     non_zero_mask = filtered_array != 0
     filtered_array[non_zero_mask] = category_indices[tuple(indices[:, non_zero_mask])]
 
-    # Extract unique labels present in the segmented volume
-    skel_label = sorted(unique_labels)
-
-    return filtered_array, skel_label
+    return filtered_array, foreground_mask
 
 def remove_small_components_cc3d(segmented_volume, largest_cluster_label, second_largest_label, threshold_ratio=0.01, connectivity=26):
     """
