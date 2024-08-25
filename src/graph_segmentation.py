@@ -581,6 +581,11 @@ def calculate_distance_from_largest(branch_connectivity_graph, largest_cluster_l
                 distances[neighbor] = current_distance + 1
                 queue.append(neighbor)
     
+    for node, distance in distances.items():
+        if distance == float('inf'):
+            distances[node] = 0
+            #print(f"Node {node} had an 'inf' distance. Set to 0.")
+    
     # Find the furthest distance
     max_distance = max(distances.values())
     print(f"The largest distance (1 based index) from a large branch is: {max_distance}")

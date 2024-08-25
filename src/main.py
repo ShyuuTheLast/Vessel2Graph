@@ -65,6 +65,7 @@ def main(args):
     # Plot the elbow curve to help determine the optimal number of clusters for k-means
     plot_elbow_curve(medians)
     optimal_clusters = int(input("Enter the optimal number of clusters: "))
+    #optimal_clusters = 2
     
     # Cluster the medians of the branches to classify them into different groups
     labels, largest_cluster_label, second_largest_label = cluster_radius(medians, optimal_clusters)
@@ -95,8 +96,8 @@ def main(args):
     # Segment the volume using the graph's node attributes (e.g., label or radius)
     segmented_volume, foreground_mask = segment_volume(filtered_array, G, args.voxel_size, attribute=args.segmentation_attribute)
     
-    if args.debug:
-        save_segmented_volume(foreground_mask,"foreground_mask")
+    if args.debug and args.segmentation_attribute == "label":
+        save_segmented_volume(np.where(foreground_mask, 2, filtered_array),"foreground_mask")
     
     if args.segmentation_attribute == "label":
         # Perform connected component analysis and relabel dust
