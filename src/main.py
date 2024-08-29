@@ -82,6 +82,19 @@ def main(args):
     
     # Label the branch points in the graph with the correct branch labels
     G = label_branch_points(G, branch_points, largest_cluster_label)
+
+    #export list of branches with largest cluster label
+    if args.segmentation_attribute == "label":
+        large_branches = []
+
+        for branch in branch_connectivity_graph.nodes:
+            if branch_connectivity_graph.nodes[branch]['label'] and branch_connectivity_graph.nodes[branch]['label'] == largest_cluster_label:
+                large_branches.append(branch)
+        large_branches.sort()
+
+        with open('large_branches.txt','w') as file:
+            for branch_id in large_branches:
+                file.write(f"{branch_id}\n")
     
     if args.segmentation_attribute == "dist_from_largest":
         # Calculate the distance from each branch to the nearest branch in the largest cluster
