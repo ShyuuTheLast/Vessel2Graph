@@ -1,5 +1,6 @@
 # src/data_saver.py
 import h5py
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -85,6 +86,17 @@ def save_stats(output_path, branch_points, end_points, neighbor_counts, branch_i
     # Save the stats dictionary into an .npz file
     np.savez_compressed(output_path, **stats)
     print(f"Statistics saved to {output_path}")
+
+def save_paths_as_pickle(paths, filename='paths_coords_list.pkl'):
+    """
+    Save the provided paths list as a pickle file.
+
+    Parameters:
+    - paths (list): A list of paths (each path is a list of coordinates).
+    - filename (str): The name of the file to save (default is 'paths_coords_list.pkl').
+    """
+    with open(filename, 'wb') as f:
+        pickle.dump(paths, f)
 
 def plot_graph(angle, graph):
     """

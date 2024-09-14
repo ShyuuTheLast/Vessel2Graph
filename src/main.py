@@ -7,10 +7,10 @@ from graph_segmentation import (
     merge_graph_components, get_neighbor_counts, simplified_graph_generation, plot_elbow_curve, 
     cluster_radius, relabel_graph_with_branches, relabel_small_branches_near_big_ones, label_branch_points, calculate_branching_angles,
     calculate_distance_from_largest, propagate_distances_to_original_graph, remove_small_components_cc3d, 
-    segment_volume
+    segment_volume, skeleton_in_array
 )
 from data_saver import (
-    save_skeleton_to_file, save_segmented_volume, save_stats, graph2video
+    save_skeleton_to_file, save_segmented_volume, save_stats, graph2video, save_paths_as_pickle
 )
 from visualization import (
     visualize_skeleton, visualize_radii, visualize_skeleton_colored,
@@ -60,7 +60,10 @@ def main(args):
         print("Number of end points:", len(end_points))
     
     # Generate a simplified version of the graph along with path details
-    simplified_G, unique_paths, medians, means = simplified_graph_generation(G, branch_points, end_points)
+    simplified_G, unique_paths, medians, means, vertices_by_branch = simplified_graph_generation(G, branch_points, end_points, args.voxel_size)
+    
+    if args.save_paths_list:
+        save_paths_as_pickle(vertices_by_branch, args.paths_list_name)
     
     # Plot the elbow curve to help determine the optimal number of clusters for k-means
     plot_elbow_curve(medians)
@@ -90,21 +93,26 @@ def main(args):
         # Propagate these distances back to the original graph
         G = propagate_distances_to_original_graph(G, branch_connectivity_graph, distances)
     
+    if args.save_skeleton_as_array:
+        skeleton_array = skeleton_in_array(filtered_array, G, args.voxel_size)
+        save_segmented_volume(skeleton_array,args.skeleton_array_name)
+    
     # Save all the calculated statistics (branch points, end points, etc.) to a file
     save_stats(args.stats_output_path, branch_points, end_points, neighbor_counts, branch_info, total_length, branching_angles)
     
-    # Segment the volume using the graph's node attributes (e.g., label or radius)
-    segmented_volume, foreground_mask = segment_volume(filtered_array, G, args.voxel_size, attribute=args.segmentation_attribute)
-    
-    if args.debug and args.segmentation_attribute == "label":
-        save_segmented_volume(np.where(foreground_mask, 2, filtered_array),"foreground_mask")
-    
-    if args.segmentation_attribute == "label":
-        # Perform connected component analysis and relabel dust
-        segmented_volume = remove_small_components_cc3d(segmented_volume, largest_cluster_label, second_largest_label, threshold_ratio=0.01, connectivity=26)
-    
-    # Save the segmented volume to an HDF5 file
-    save_segmented_volume(segmented_volume, args.output_file)
+    if args.do_segment:
+        # Segment the volume using the graph's node attributes (e.g., label or radius)
+        segmented_volume, foreground_mask = segment_volume(filtered_array, G, args.voxel_size, attribute=args.segmentation_attribute)
+        
+        if args.debug and args.segmentation_attribute == "label":
+            save_segmented_volume(np.where(foreground_mask, 2, filtered_array),"foreground_mask")
+        
+        if args.segmentation_attribute == "label":
+            # Perform connected component analysis and relabel dust
+            segmented_volume = remove_small_components_cc3d(segmented_volume, largest_cluster_label, second_largest_label, threshold_ratio=0.01, connectivity=26)
+        
+        # Save the segmented volume to an HDF5 file
+        save_segmented_volume(segmented_volume, args.output_file)
     
     # Visualizations
     if args.visualize_skeleton:
@@ -220,6 +228,13 @@ if __name__ == "__main__":
             
             target_labels = [1]  # Labels to keep in the array
             relabel_nodes = True
+            
+            save_paths_list = True # Whether to save the nodes of skeleton as list of lists divided by branches
+            paths_list_name = "macaque_branches.pkl"
+            save_skeleton_as_array = True #Whether to save skeleton as points in a volume
+            skeleton_array_name = "macaque_skel_as_array"
+            
+            do_segment = False; # Whether to segment and save original volume
             segmentation_attribute = 'branch'  # Current options: branch, label, radius, dist_from_largest
             
             scale_factor = 1920  # Scale factor for visualization

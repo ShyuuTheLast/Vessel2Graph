@@ -203,7 +203,7 @@ def get_represent_radii(unique_paths):
         means.append(np.mean(radii))
     return medians, means
 
-def simplified_graph_generation(G, branch_points, end_points):
+def simplified_graph_generation(G, branch_points, end_points, voxel_size):
     """
     Generate a simplified graph containing only branch points and end points from the full graph.
 
@@ -255,7 +255,19 @@ def simplified_graph_generation(G, branch_points, end_points):
     means_sorted = list(means_sorted)
     unique_paths_sorted = list(unique_paths_sorted)
     
-    return simplified_G, unique_paths_sorted, medians_sorted, means_sorted
+    # Initialize a list to store the extracted coordinates
+    vertices_by_branch = []
+    
+    # Iterate through each path in unique_paths_sorted
+    for path in unique_paths_sorted:
+        # For each path, extract only the coordinates part
+        branch = [(coord[0] / voxel_size[0], 
+                        coord[1] / voxel_size[1], 
+                        coord[2] / voxel_size[2]) for coord, _ in path]
+        # Append the coordinate-only path to the list
+        vertices_by_branch.append(branch)
+
+    return simplified_G, unique_paths_sorted, medians_sorted, means_sorted, vertices_by_branch
 
 def plot_elbow_curve(rep_rad, max_clusters=10):
     """
@@ -697,6 +709,20 @@ def segment_volume(filtered_array, G, voxel_size, attribute='label'):
     filtered_array[non_zero_mask] = category_indices[tuple(indices[:, non_zero_mask])]
 
     return filtered_array, foreground_mask
+
+def skeleton_in_array(filtered_array, G, voxel_size):
+    # Create a 3D volume for the skeleton points with the same shape as `filtered_array`
+    skeleton_array = np.zeros_like(filtered_array)
+    #print(skeleton_array.shape)
+    # Iterate through the nodes in the graph
+    for idx, node in enumerate(G.nodes):
+        
+        # Adjust the node coordinates to match the anisotropic space
+        adjusted_node = tuple(int(coord / scale) for coord, scale in zip(node, voxel_size))
+        skeleton_array[adjusted_node] = 1
+    
+    return skeleton_array
+            
 
 def remove_small_components_cc3d(segmented_volume, largest_cluster_label, second_largest_label, threshold_ratio=0.01, connectivity=26):
     """
