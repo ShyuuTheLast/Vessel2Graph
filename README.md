@@ -81,15 +81,15 @@ The following files are generated:
 
 #### **1. Segment by Branch**
 ![Segment by Branch](images/segment_by_branch.png)
-Each branch is uniquely labeled and colored, allowing clear visualization of individual vessel structures and their connectivity.
+Each branch is segmented topologically. Unrelated parts that happen to be geometrically nearby are no longer included during highlighting.
 
 #### **2. Segment by Branch Size**
 ![Segment by Branch Size](images/segment_by_branch_size.png)
-Branches are categorized by size, distinguishing large vessels like arteries from smaller capillaries for focused analysis.
+Branches are categorized by size, distinguishing large vessels like arteries from smaller capillaries. In the MICrONS Millimeter dataset, this method can highlight the penetrating vessels.
 
 #### **3. Segment by Distance from Largest**
 ![Segment by Distance from Largest](images/segment_by_distance.png)
-Branches are colored by their proximity to the largest vessels, revealing vascular hierarchy and branching patterns.
+Capillaries branches are segmented by their proximity to the largest group of vessels, allowing layer-by-layer visualizations.
 
 ## Future Directions
 
