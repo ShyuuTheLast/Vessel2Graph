@@ -1,0 +1,315 @@
+{
+  "recorded_date": "2026-09-10",
+  "status": "User accepted phase-1 execution and visualization; not ground-truth accuracy",
+  "input": {
+    "path": "data/macaque_mpi_176-240nm_bv_gt_cc.h5",
+    "sha256": "30981cd116ada622db405a09ab18935063f288fba9a59a505c45c88e5f1fe583",
+    "dataset": "main",
+    "labels": [
+      1
+    ],
+    "voxel_size_nm_zyx": [
+      320,
+      256,
+      256
+    ]
+  },
+  "artifacts": {
+    "runs/macaque/skeleton.npz": {
+      "sha256": "9314691c3129861a6a233c4792739c11d27438b3c1e7f39a96253924c8d43497",
+      "bytes": 38245
+    },
+    "runs/macaque/graph.npz": {
+      "sha256": "f5926f4739941d2df8cbb6e5dce0228b630c22710fdbd1859de77df8ec207e1e",
+      "bytes": 41702
+    },
+    "runs/macaque/branches.json": {
+      "sha256": "a32e63bcb7bc34c410674197045a226bfb6042499e8e72816cbb0a869b55700d",
+      "bytes": 60139
+    },
+    "runs/macaque/metrics.json": {
+      "sha256": "880b9493c39ae30ef6cc7ad7bed9325ce1e6ffb5e12d6627c5fcbdb6f46528aa",
+      "bytes": 10010
+    },
+    "runs/macaque/segmentation.h5": {
+      "sha256": "73f6ad523f5a2c959bc681c3818beb2dea0030b927de7027e9ea37372ff7e078",
+      "bytes": 4422764
+    },
+    "runs/macaque/segmentation.json": {
+      "sha256": "9e0da2d87f40b31878784160077898b3e38e26a483ca630d91f957cd0ed3bccc",
+      "bytes": 500
+    },
+    "runs/macaque/report.json": {
+      "sha256": "72ed820c1c559d282ffc69eb269df00dfd8ddf3fa8f3da6e4d7eaea9835fd64b",
+      "bytes": 12041
+    },
+    "runs/macaque/resolved-config.yaml": {
+      "sha256": "c82642b3d8342e6a6c54b1ee517dc80ace591b1457a0337613aed08f196959aa",
+      "bytes": 1088
+    },
+    "runs/macaque/provenance.json": {
+      "sha256": "6d270474da5c5c8c56b16b5378350be208cb20f86d0fb49c8a4a0086763586b6",
+      "bytes": 363
+    },
+    "runs/macaque-caliber/skeleton.npz": {
+      "sha256": "9314691c3129861a6a233c4792739c11d27438b3c1e7f39a96253924c8d43497",
+      "bytes": 38245
+    },
+    "runs/macaque-caliber/graph.npz": {
+      "sha256": "f5926f4739941d2df8cbb6e5dce0228b630c22710fdbd1859de77df8ec207e1e",
+      "bytes": 41702
+    },
+    "runs/macaque-caliber/branches.json": {
+      "sha256": "a32e63bcb7bc34c410674197045a226bfb6042499e8e72816cbb0a869b55700d",
+      "bytes": 60139
+    },
+    "runs/macaque-caliber/metrics.json": {
+      "sha256": "880b9493c39ae30ef6cc7ad7bed9325ce1e6ffb5e12d6627c5fcbdb6f46528aa",
+      "bytes": 10010
+    },
+    "runs/macaque-caliber/segmentation.h5": {
+      "sha256": "53aff6423a1586cdd2338f24cb70dc064ffe57d6771e738731038ccaaff6030c",
+      "bytes": 4414607
+    },
+    "runs/macaque-caliber/segmentation.json": {
+      "sha256": "5d6d76daa1276312245dbf2cf8343a4cd32351845f84c936ca4bc7933083253c",
+      "bytes": 300
+    },
+    "runs/macaque-caliber/report.json": {
+      "sha256": "1fb1be7223d40f4f4e5daa4f7c7b193b32a60a0280f040065a90981cb130cb24",
+      "bytes": 11819
+    },
+    "runs/macaque-caliber/resolved-config.yaml": {
+      "sha256": "838b28ff737bb4aad80e185a42829ae1e96852e91d1f9caf7cfb9aaaf1e048db",
+      "bytes": 1095
+    },
+    "runs/macaque-caliber/provenance.json": {
+      "sha256": "6d270474da5c5c8c56b16b5378350be208cb20f86d0fb49c8a4a0086763586b6",
+      "bytes": 363
+    },
+    "runs/macaque-radius/skeleton.npz": {
+      "sha256": "9314691c3129861a6a233c4792739c11d27438b3c1e7f39a96253924c8d43497",
+      "bytes": 38245
+    },
+    "runs/macaque-radius/graph.npz": {
+      "sha256": "f5926f4739941d2df8cbb6e5dce0228b630c22710fdbd1859de77df8ec207e1e",
+      "bytes": 41702
+    },
+    "runs/macaque-radius/branches.json": {
+      "sha256": "a32e63bcb7bc34c410674197045a226bfb6042499e8e72816cbb0a869b55700d",
+      "bytes": 60139
+    },
+    "runs/macaque-radius/metrics.json": {
+      "sha256": "880b9493c39ae30ef6cc7ad7bed9325ce1e6ffb5e12d6627c5fcbdb6f46528aa",
+      "bytes": 10010
+    },
+    "runs/macaque-radius/segmentation.h5": {
+      "sha256": "8fdefadb6a7effe927a82ac1b35e99a0afb051eb13c6c28fcb65c96bef4ac09c",
+      "bytes": 6050144
+    },
+    "runs/macaque-radius/segmentation.json": {
+      "sha256": "3473e68afe3132411347e43fdd555735657b5db91740c6b807e7dbee9e97b16b",
+      "bytes": 261
+    },
+    "runs/macaque-radius/report.json": {
+      "sha256": "2abc867f4f15fda1f5fc2a9deba44ba3ca1a41df8610dc9af47b83bcf620a1bb",
+      "bytes": 11774
+    },
+    "runs/macaque-radius/resolved-config.yaml": {
+      "sha256": "f4757f6ca38ae7aac4e2665bb9305603b9aa1a392872fc1a1c795591e2b2daad",
+      "bytes": 1921
+    },
+    "runs/macaque-radius/provenance.json": {
+      "sha256": "5801be44a9b6092071e35da0589f52d2c5bf0e6893a343c80dd5033188e1d09d",
+      "bytes": 363
+    }
+  },
+  "inspection": {
+    "candidate_gaps": [
+      {
+        "distance_nm": 409.7999511957023,
+        "endpoints": [
+          {
+            "node": 3465,
+            "zyx_nm": [
+              87680.0,
+              258048.0,
+              97536.0
+            ],
+            "zyx_voxel": [
+              274.0,
+              1008.0,
+              381.0
+            ]
+          },
+          {
+            "node": 3475,
+            "zyx_nm": [
+              88000.0,
+              258048.0,
+              97792.0
+            ],
+            "zyx_voxel": [
+              275.0,
+              1008.0,
+              382.0
+            ]
+          }
+        ],
+        "interpretation": "Nearest inter-component endpoints: candidate inspection, not proof of missing connection"
+      },
+      {
+        "distance_nm": 1402.1697472132253,
+        "endpoints": [
+          {
+            "node": 3465,
+            "zyx_nm": [
+              87680.0,
+              258048.0,
+              97536.0
+            ],
+            "zyx_voxel": [
+              274.0,
+              1008.0,
+              381.0
+            ]
+          },
+          {
+            "node": 3514,
+            "zyx_nm": [
+              88960.0,
+              258560.0,
+              97280.0
+            ],
+            "zyx_voxel": [
+              278.0,
+              1010.0,
+              380.0
+            ]
+          }
+        ],
+        "interpretation": "Nearest inter-component endpoints: candidate inspection, not proof of missing connection"
+      },
+      {
+        "distance_nm": 1202.4508305955799,
+        "endpoints": [
+          {
+            "node": 3475,
+            "zyx_nm": [
+              88000.0,
+              258048.0,
+              97792.0
+            ],
+            "zyx_voxel": [
+              275.0,
+              1008.0,
+              382.0
+            ]
+          },
+          {
+            "node": 3514,
+            "zyx_nm": [
+              88960.0,
+              258560.0,
+              97280.0
+            ],
+            "zyx_voxel": [
+              278.0,
+              1010.0,
+              380.0
+            ]
+          }
+        ],
+        "interpretation": "Nearest inter-component endpoints: candidate inspection, not proof of missing connection"
+      }
+    ],
+    "junctions": [
+      {
+        "node": 671,
+        "zyx_nm": [
+          14400.0,
+          266752.0,
+          151552.0
+        ],
+        "zyx_voxel": [
+          45.0,
+          1042.0,
+          592.0
+        ]
+      },
+      {
+        "node": 930,
+        "zyx_nm": [
+          18560.0,
+          254208.0,
+          132352.0
+        ],
+        "zyx_voxel": [
+          58.0,
+          993.0,
+          517.0
+        ]
+      },
+      {
+        "node": 1944,
+        "zyx_nm": [
+          60800.0,
+          162048.0,
+          142336.0
+        ],
+        "zyx_voxel": [
+          190.0,
+          633.0,
+          556.0
+        ]
+      },
+      {
+        "node": 2084,
+        "zyx_nm": [
+          62720.0,
+          127744.0,
+          143104.0
+        ],
+        "zyx_voxel": [
+          196.0,
+          499.0,
+          559.0
+        ]
+      },
+      {
+        "node": 2108,
+        "zyx_nm": [
+          63040.0,
+          74496.0,
+          99584.0
+        ],
+        "zyx_voxel": [
+          197.0,
+          291.0,
+          389.0
+        ]
+      }
+    ],
+    "smallest_median_branch": {
+      "branch_id": 13,
+      "median_radius_nm": 2447.5284423828125,
+      "midpoint": {
+        "node": 4360,
+        "zyx_nm": [
+          120960.0,
+          270080.0,
+          101376.0
+        ],
+        "zyx_voxel": [
+          378.0,
+          1055.0,
+          396.0
+        ]
+      }
+    }
+  },
+  "notes": [
+    "Node and branch IDs apply only to this baseline; compare future runs in physical coordinates.",
+    "Do not regenerate this manifest after changing outputs unless intentionally establishing a new baseline."
+  ]
+}

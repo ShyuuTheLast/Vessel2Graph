@@ -1,0 +1,16 @@
+schema_version: 1
+input:
+  path: ../data/macaque_mpi_176-240nm_bv_gt_cc.h5
+  dataset: main
+  labels: [1]
+  voxel_size_nm: [320, 256, 256]
+output:
+  directory: ../runs/macaque-binary
+resources:
+  max_memory_gib: 16
+  reserve_memory_gib: 2
+estimation:
+  erosion_steps: 16
+  sample_count: 1024
+  random_seed: 42
+  coverage_quantile: 0.9

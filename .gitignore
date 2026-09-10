@@ -1,13 +1,26 @@
+# Local environments, installers, caches and scratch
+.env/
+.runtime/
+.tools/
+work/
+reference/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.coverage
+build/
+dist/
 
-/src/__pycache__
-src/branch_segmented_macaque_vessels.h5
-src/label_segmented_macaque_vessels.h5
-src/macaque_original_isotropy_skeleton.npz
-src/macaque_stats.npz
-src/output_skeleton.npz
-src/test.npz
+# Research data and generated runs
+runs/
+outputs/
 *.h5
-/venv
-/.vscode
+*.hdf5
 *.npz
-src/macaque_branches.pkl
+*.npy
+*.pkl
+
+# Local overrides / secrets
+.env.local
+configs/*.local.yaml

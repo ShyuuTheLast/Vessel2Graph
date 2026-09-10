@@ -1,0 +1,2 @@
+-c requirements-core.txt
+neuroglancer==2.41.2

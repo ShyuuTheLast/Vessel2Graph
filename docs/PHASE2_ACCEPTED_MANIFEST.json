@@ -1,0 +1,73 @@
+{
+  "acceptance": "User visual acceptance, 2026-09-10; evaluation reference only",
+  "artifacts": {
+    "runs/macaque-closing-1024nm/estimation-volume-v2/candidate.yaml": {
+      "bytes": 1435,
+      "sha256": "448998711b72df4ac27f8f66acb8d13eba8abd56a1a0af7d7dc3e4948542fbb7"
+    },
+    "runs/macaque-closing-1024nm/estimation-volume-v2/measurements.json": {
+      "bytes": 6164,
+      "sha256": "4917e4d72b08947a4a704575612946b67d5a44d2fb3ff26e04617ab1a3719c6e"
+    },
+    "runs/macaque-closing-1024nm/estimation-volume-v2/prepared-mask.h5": {
+      "bytes": 1479638,
+      "sha256": "871aa54afd4a8ba4a652250a0f8d5428ee6d26a36079ca5b0b4734cb6a421784"
+    },
+    "runs/macaque-closing-1024nm/estimation-volume-v2/profiles.npz": {
+      "bytes": 12766,
+      "sha256": "ade67a238af6e7010169b4a5b1584a4406becf179311c5b3610679e1fb84e204"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/baseline-evaluation.json": {
+      "bytes": 3595,
+      "sha256": "c735066b0cf23db793b7c4de27cf57e2044eef9d9ab673f9912c40869519dffc"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/branches.json": {
+      "bytes": 60180,
+      "sha256": "58b907dbf057e569a88669c808323d9f35416d1bc584af1f823b494ed9b02cd5"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/closing-evaluation.json": {
+      "bytes": 2153,
+      "sha256": "d659b51b9e9832ad8be661f27e416496628537473f4f6d79fdf331a6c88757af"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/graph.npz": {
+      "bytes": 41784,
+      "sha256": "a53092c38014074b358b0d742a49ffa1a753718a90aeba96a7d1f7a23fa6c74a"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/graph.stage.json": {
+      "bytes": 447,
+      "sha256": "6e6e24646ad33b5d25aaf7be3e054d81f34d8172b8ec512c3a1394f6f07d5455"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/memory-monitor.json": {
+      "bytes": 439,
+      "sha256": "d1bce24b2af2c339df90a2dfe073378949deb464ab549ae0cbb2bc5899aa437b"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/metrics.json": {
+      "bytes": 5363,
+      "sha256": "93062428a23a00a270da5161feaf8bef1a44a8b566ec6e72c6c5f66b6843a011"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/monitored-tracing.log": {
+      "bytes": 89,
+      "sha256": "763f5d4478838dfab24271c800d3294421764faa3189b65f724517bcfb28a94a"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/provenance.json": {
+      "bytes": 465,
+      "sha256": "99f27537247112509a4260b919e4084172a6ba3f61d731ca3b8d77d91854deb2"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/resolved-config.yaml": {
+      "bytes": 1435,
+      "sha256": "448998711b72df4ac27f8f66acb8d13eba8abd56a1a0af7d7dc3e4948542fbb7"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/skeleton-crop.json": {
+      "bytes": 204,
+      "sha256": "07b47d8902f8e01a9391b51481cfb16189540a611e2352b068682a62f79e1947"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/skeleton.npz": {
+      "bytes": 38531,
+      "sha256": "16e79d8e44fe22df133cfb98e68c0380d36891468e8e978ef51105d1a831120c"
+    },
+    "runs/macaque-closing-1024nm-volume-estimated-v2/skeleton.stage.json": {
+      "bytes": 269,
+      "sha256": "b4951b2b3cb3a381e1c577171f70f5d857e044f1ed4ab32c8515a2ca8bdd1d2d"
+    }
+  }
+}

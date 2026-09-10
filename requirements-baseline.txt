@@ -1,0 +1,4 @@
+# Extra imports required by the original scripts, not by the planned headless core.
+-r requirements-core.txt
+matplotlib==3.9.2
+opencv-python-headless==4.10.0.84

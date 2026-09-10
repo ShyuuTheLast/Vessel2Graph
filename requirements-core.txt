@@ -1,0 +1,15 @@
+# Phase-2 CPU stack. Preserve upstream Kimimaro for baseline reproducibility.
+numpy==1.26.4
+scipy==1.14.1
+h5py==3.11.0
+networkx==3.3
+scikit-learn==1.5.1
+PyYAML==6.0.2
+kimimaro==4.1.2
+# Match the original repository; current cloud-volume/osteoid breaks 4.1.2 merging.
+cloud-volume==10.4.0
+connected-components-3d==3.18.0
+edt==2.4.1
+fill-voids==2.1.2
+psutil==7.2.2
+pytest==8.3.2

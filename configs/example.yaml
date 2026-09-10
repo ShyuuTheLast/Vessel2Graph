@@ -1,0 +1,25 @@
+# Copy to default.local.yaml and edit. Paths resolve from this file.
+schema_version: 1
+input:
+  path: ../data/volume.h5
+  dataset: main
+  labels: [1]
+  voxel_size_nm: [320, 256, 256]  # EXAMPLE ZYX nm; supply actual spacing.
+output:
+  directory: ../runs/dataset
+skeleton:
+  source: null
+  crop_empty_border: true
+  parallel: 1
+resources:
+  max_memory_gib: 16
+  reserve_memory_gib: 2
+estimation:
+  sample_count: 1024
+  erosion_steps: 16
+  random_seed: 42
+  coverage_quantile: 0.9
+visualization:
+  layers: [input_mask, skeleton_by_branch, junctions]
+  hidden_layers: [input_mask, junctions]
+  open_browser: false

@@ -1,0 +1,39 @@
+schema_version: 1
+input:
+  path: ../data/macaque_mpi_176-240nm_bv_gt_cc.h5
+  dataset: main
+  labels: [1]
+  voxel_size_nm: [320, 256, 256]  # ZYX, confirmed by dataset owner
+output:
+  directory: ../runs/macaque
+skeleton:
+  # Explicit legacy pickle import; this is our locally generated, trusted baseline.
+  source: ../outputs/macaque-legacy-baseline/macaque_original_isotropy_skeleton.npz
+  format: legacy_npz
+  teasar_params:
+    scale: 1.5
+    const: 30000
+    pdrf_scale: 100000
+    pdrf_exponent: 4
+    soma_detection_threshold: 750
+    soma_acceptance_threshold: 3500
+    soma_invalidation_scale: 2
+    soma_invalidation_const: 300
+    max_paths: 300
+graph:
+  radius_clusters: 2
+segment:
+  attribute: branch
+  method: surface_chessboard
+resources:
+  max_memory_gib: 10
+  reserve_memory_gib: 2
+visualization:
+  layers: [input_mask, branch_segmentation, caliber_segmentation, skeleton_by_branch,
+           skeleton_by_caliber, skeleton_by_corrected_caliber, skeleton_by_radius, junctions, corrected_nodes, radius_volume]
+  hidden_layers: [input_mask, caliber_segmentation, skeleton_by_caliber,
+                  skeleton_by_corrected_caliber, skeleton_by_radius, junctions, corrected_nodes, radius_volume]
+  branch_volume: ../runs/macaque/segmentation.h5
+  caliber_volume: ../runs/macaque-caliber/segmentation.h5
+  radius_volume: ../runs/macaque-radius/segmentation.h5
+  open_browser: true

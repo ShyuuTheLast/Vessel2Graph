@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "method": "reference_coverage_v1",
+  "status": "experimental_single_dataset_calibration",
+  "scale": 1.5,
+  "const_radius_multiplier": 2.4779515989929557,
+  "voxel_diagonal_multiplier": 0.5,
+  "training_radius_max_nm": 4413.6806640625,
+  "training_required_const_nm": 10936.887058957962,
+  "training_input_sha256": "30981cd116ada622db405a09ab18935063f288fba9a59a505c45c88e5f1fe583",
+  "training_reference_sha256": "f5926f4739941d2df8cbb6e5dce0228b630c22710fdbd1859de77df8ec207e1e",
+  "training_input": {
+    "path": "data\\macaque_mpi_176-240nm_bv_gt_cc.h5",
+    "dataset": "main",
+    "labels": [
+      1
+    ],
+    "voxel_size_nm": [
+      320,
+      256,
+      256
+    ]
+  },
+  "training_reference": "<project-root>\\runs\\macaque\\graph.npz",
+  "fixed_teasar_context": {
+    "pdrf_scale": 100000,
+    "pdrf_exponent": 4,
+    "soma_detection_threshold": 750,
+    "soma_acceptance_threshold": 3500,
+    "soma_invalidation_scale": 2,
+    "soma_invalidation_const": 300,
+    "max_paths": 300
+  },
+  "fixed_tracing_context": {
+    "fix_branching": true,
+    "fix_borders": true,
+    "dust_threshold": 0
+  },
+  "selected_voxels": 4066930,
+  "elapsed_seconds": 11.281390699994517,
+  "limitations": [
+    "Single-dataset calibration; transfer is unvalidated.",
+    "Euclidean nearest-reference coverage is not an invalidation simulation.",
+    "Scale and centering are inherited from the accepted reference, not newly inferred.",
+    "EDT maximum and the reference coverage maximum can be sensitive to local geometry."
+  ]
+}
