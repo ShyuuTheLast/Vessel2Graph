@@ -22,9 +22,12 @@ DEFAULTS = {
         'dust_threshold': 0, 'parallel': 1, 'fix_branching': True, 'fix_borders': True,
         'crop_empty_border': False,
     },
-    'graph': {'radius_clusters': 2, 'random_seed': 42, 'correct_branch_ends': True},
-    'segment': {'attribute': 'branch', 'method': 'surface_chessboard', 'surface_samples': 100,
-                'query_batch_size': 100000, 'read_slices': 8, 'compression': 'gzip'},
+    'graph': {'radius_clusters': 2, 'random_seed': 42, 'correct_branch_ends': True, 'sandwich': True,
+              'ellipsoid_reach': 1.5},
+    # workers null = every CPU this process may use; dust_ratio 0 disables the label dust step.
+    'segment': {'attribute': 'branch', 'method': 'surface_euclidean', 'surface_samples': 100,
+                'query_batch_size': 100000, 'read_slices': 8, 'compression': 'gzip',
+                'workers': None, 'dust_ratio': 0.01},
     'resources': {'max_memory_gib': 10, 'reserve_memory_gib': 2},
     'hpc': {'partition': 'bigmem', 'account': None, 'cpus': 4, 'mem_gib': None,
             'time': '1-00:00:00', 'setup': []},
@@ -96,7 +99,7 @@ def load_config(path):
     # Zero disables closing, pruning or loop opening respectively.
     for key in ('closing_radius_nm', 'prune_factor', 'loop_factor', 'min_loop_perimeter_nm'):
         _positive(thinning[key], 'skeleton.thinning.' + key, zero=True)
-    for section, keys in [('skeleton', ['fix_branching', 'fix_borders', 'crop_empty_border']), ('graph', ['correct_branch_ends'])]:
+    for section, keys in [('skeleton', ['fix_branching', 'fix_borders', 'crop_empty_border']), ('graph', ['correct_branch_ends', 'sandwich'])]:
         for key in keys:
             if type(cfg[section][key]) is not bool:
                 raise ValueError(f'{section}.{key} must be Boolean')
@@ -105,6 +108,12 @@ def load_config(path):
                                 ('segment','query_batch_size',False), ('segment','read_slices',False),
                                 ('segment','surface_samples',False)]:
         _positive(cfg[section][key], f'{section}.{key}', zero=zero, integer=True)
+    _positive(cfg['graph']['ellipsoid_reach'], 'graph.ellipsoid_reach', zero=True)
+    if cfg['segment']['workers'] is not None:
+        _positive(cfg['segment']['workers'], 'segment.workers', integer=True)
+    _positive(cfg['segment']['dust_ratio'], 'segment.dust_ratio', zero=True)
+    if cfg['segment']['dust_ratio'] >= 1:
+        raise ValueError('segment.dust_ratio must be below 1')
     if cfg['segment']['surface_samples'] < 4:
         raise ValueError('surface_samples must be at least 4')
     for key, value in cfg['resources'].items():

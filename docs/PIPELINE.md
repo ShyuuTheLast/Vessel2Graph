@@ -63,8 +63,17 @@ No current-working-directory dependency exists for paths declared inside the dat
   count is capped by distinct medians; classes are ordered thin (1) to thick (K).
 - `graph.correct_branch_ends`: true by default. Corrects only segmentation caliber labels
   near junctions. Set false for comparison; junction caliber assignment remains active.
+- `graph.sandwich`: true by default. A branch whose two junction ends each touch a larger
+  class takes the smaller of those classes for segmentation (legacy sandwich rule).
+- `graph.ellipsoid_reach`: 1.5 by default. At a junction where a smaller class meets a larger
+  one, the junction and larger-class nodes within this many junction radii are seeded on their
+  ellipsoid surface; every other node is a point seed. 0 limits ellipsoids to the junction.
 - `segment.attribute`: branch, label (caliber class), radius (nm), or dist_from_largest.
-- `segment.method`: surface_chessboard (baseline), or surface_euclidean (physical distance).
+- `segment.method`: surface_euclidean (default, physical distance) or surface_chessboard
+  (voxel-step distance of the legacy CDT; distorted by anisotropic voxels).
+- `segment.workers`: threads for nearest-seed queries; null uses every CPU the process may use.
+- `segment.dust_ratio`: label mode only, 0.01 by default, 0 disables. Top-down over classes,
+  26-connected pieces of class k smaller than this fraction of its largest piece become k - 1.
 - `segment.surface_samples`: angular samples per axis, default 100, matching legacy sampling.
 - `segment.query_batch_size`, `read_slices`, `compression`: bounded query/HDF5 controls.
 - `resources.max_memory_gib`, `reserve_memory_gib`: advisory process checks and available
@@ -93,22 +102,22 @@ skipped entirely when constructing branch-ID seeds, including collisions. Branch
 the shared endpoint in each incident path for lengths/connectivity. Thus per-path radius/length
 statistics still use the stored paths; they are not recalculated from projected voxel ownership.
 This is a topological decomposition, not a claim that an entire biological vessel through a
-junction is a single instance. Automatic component joining, whole-branch caliber overrides
-and component cleanup are not enabled.
+junction is a single instance. Automatic component joining is not enabled; the sandwich
+whole-branch override and label dust cleanup are (see below).
 
-`graph.npz` preserves original node `label` and adds `segmentation_label`. Original junction
-label is 0 (no unique branch class). Its segmentation label comes from the incident edge whose
-immediate neighbor has the largest individual radius, using that edge's original branch class;
-ties choose the smaller branch ID. This also handles adjacent junctions without cascading labels.
-The old fallback bug that assigned a physical radius as a label is fixed.
+`graph.npz` preserves original node `label` and adds `segmentation_label` and `ellipsoid_seed`.
+Segmentation classes start from the KMeans classes and apply the sandwich rule once, on a
+snapshot: a branch with two distinct junction ends, each touching a larger class, takes the
+smaller of the two (`branches.json` records `segmentation_class`; `caliber_class` is unchanged).
+Original junction label is 0 (no unique branch class). Its segmentation label is the largest
+segmentation class among its incident branches (legacy label_branch_points). The old fallback
+bug that assigned a physical radius as a label is fixed.
 
 For each junction, smaller-class incident paths are traversed outward and their initial nodes
 inside the junction's physical radius receive the highest incident class for caliber projection.
-Traversal stops at the first outside node or another junction. Every decision uses the original
-branch classes, not already corrected labels. Overlapping corrections choose the highest proposed
-class. All classes participate, not just the global largest. Nodes far from the ends are never
-promoted merely because both ends qualify. A short branch can still lie entirely inside the
-local correction regions; that is the geometric rule, not the omitted whole-branch override.
+Traversal stops at the first outside node or another junction. Every decision uses the
+segmentation classes after the sandwich pass, not already corrected node labels. Overlapping corrections choose the highest proposed
+class. All classes participate, not just the global largest.
 `metrics.json` records each changed node, original/segmentation classes and responsible junctions.
 The `label` segmentation mode uses `segmentation_label`; branch IDs, path measurements, raw radii
 and graph-hop calculations are unchanged by this correction. Radius mode continues to use raw radii.
@@ -117,12 +126,17 @@ and graph-hop calculations are unchanged by this correction. Radius mode continu
 0 for unreachable components. It is not a physical distance. Branch/class volumes use uint32
 instead of inheriting uint8 input; radius output uses float32.
 
-Dense assignment samples the same ellipsoid surfaces as legacy, retaining the last node at
-seed collisions. A sparse KD-tree then queries only selected voxels. Chessboard distance is
-in voxel coordinates and can cross background; this remains a geometric assignment baseline,
-not geodesic propagation. Equal-distance tie selection can differ from SciPy CDT, so outputs
-are not promised bitwise identical. The Euclidean option uses physical spacing and changes
-the distance model. Neither option constitutes validated topology-aware dense recovery.
+Dense assignment seeds every node at its own voxel, and nodes flagged `ellipsoid_seed` on
+their ellipsoid surface at the node radius (legacy sampling) instead. The flags mark only where
+a thinner branch leaves a thicker class: centreline seeds alone would let the side branch claim
+voxels inside the thick vessel's wall. Ellipsoid seeds are written after point seeds, so they
+win collisions; otherwise the last node wins. A KD-tree over the seeds is queried only at
+selected voxels, in parallel. With Euclidean distance this equals a full-volume distance
+transform with nearest-seed indices up to ties (0.003% of voxels on the full mouse volume)
+without its volume-sized index arrays: 21M seeds, 228M voxels in about 2 minutes on 8 CPUs.
+Distances can cross background; this is a geometric assignment, not geodesic propagation.
+In label mode the dust step then runs on the whole volume in memory (1 byte per voxel plus
+cc3d's 4-byte labels) and the voxel counts in `segmentation.json` are taken after it.
 
 ## Validation on 2026-09-09
 

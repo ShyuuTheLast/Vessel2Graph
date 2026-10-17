@@ -1,5 +1,19 @@
 # Status — 2026-09-09
 
+## Caliber post-processing ported for the full mouse volume — 2026-10-17
+
+Legacy steps lost in v0.2 are back, for a two-class caliber figure on the full mouse volume
+(user request). graph.py: sandwich rule (`graph.sandwich`), junction label = largest incident
+class (legacy label_branch_points; was largest-radius neighbour), and `ellipsoid_seed` flags at
+junctions where a smaller class meets a larger one (`graph.ellipsoid_reach`, 1.5 junction radii).
+segment.py: point seeds for all other nodes, parallel KD-tree queries (`segment.workers`),
+Euclidean distance by default, and top-down cc3d dust in label mode (`segment.dust_ratio`, 0.01).
+Validated outside the package on the full mouse volume (scratch script kmeans_caliber.py):
+the tree and a full-volume EDT to the same seeds differ in 6,410 of 228M voxels; whole script
+4.8 min versus 26.7 min. The median over all branch nodes stays: a median over sphere-rule
+reduced nodes classed tapering large-vessel stumps as capillary and dented them.
+The thinning work was committed separately. 43 tests pass, 3 skipped.
+
 ## Loop rule gains an anatomical floor — 2026-10-13
 
 `skeleton.thinning.min_loop_perimeter_nm` (default 70000) joins `loop_factor`; a loop is

@@ -31,6 +31,26 @@ def branch_paths(graph):
     return paths, loops
 
 
+def sandwich_labels(graph, paths, labels):
+    """Snapshot pass: a branch whose two distinct ends each touch a larger class takes the
+    smaller of those two classes (legacy relabel of small branches between large ones)."""
+    incident = {}
+    for i, path in enumerate(paths):
+        for node in {path[0], path[-1]}:
+            if graph.degree(node) > 2:
+                incident.setdefault(node, []).append(i)
+    result, changes = labels.copy(), []
+    for i, path in enumerate(paths):
+        a, b = path[0], path[-1]
+        if a == b or a not in incident or b not in incident:
+            continue
+        top = [max((labels[j] for j in incident[n] if j != i), default=0) for n in (a, b)]
+        if min(top) > labels[i]:
+            result[i] = min(top)
+            changes.append(dict(branch=i + 1, original_class=int(labels[i]), segmentation_class=int(result[i])))
+    return result, changes
+
+
 def caliber_seed_labels(graph, paths, labels, data, original, enabled):
     """Snapshot-based projection labels; never edit branch membership or measurements."""
     result = original.copy()
@@ -41,13 +61,11 @@ def caliber_seed_labels(graph, paths, labels, data, original, enabled):
                 ends.setdefault(ordered[0], []).append((i, ordered))
     proposals = {}
     for junction, incident in sorted(ends.items()):
-        # Largest immediate neighbor radius, not the branch median. Edge incidence
-        # supplies its original class even when the neighbor is another junction.
-        winner, _ = max(incident, key=lambda item: (data['radius'][item[1][1]], -item[0]))
-        result[junction] = labels[winner]
+        # A junction belongs to the largest class among its branches (legacy label_branch_points).
+        larger_class = max(int(labels[i]) for i, _ in incident)
+        result[junction] = larger_class
         if not enabled:
             continue
-        larger_class = max(int(labels[i]) for i, _ in incident)
         for i, ordered in incident:
             if labels[i] >= larger_class:
                 continue
@@ -66,6 +84,32 @@ def caliber_seed_labels(graph, paths, labels, data, original, enabled):
     return result, changes
 
 
+def ellipsoid_seed_nodes(graph, paths, labels, data, reach):
+    """Nodes seeded with an ellipsoid surface instead of a point: each junction where a smaller
+    class meets a larger one, and the larger-class nodes within reach x its radius, so the
+    side branch cannot claim voxels inside the larger vessel's wall."""
+    ends = {}
+    for i, path in enumerate(paths):
+        for ordered in (path, path[::-1]):
+            if len(ordered) > 1 and graph.degree(ordered[0]) > 2:
+                ends.setdefault(ordered[0], []).append((i, ordered))
+    flag = np.zeros(len(data['vertices']), dtype=bool)
+    for junction, incident in ends.items():
+        classes = [int(labels[i]) for i, _ in incident]
+        larger_class = max(classes)
+        if min(classes) == larger_class:
+            continue
+        flag[junction] = True
+        for i, ordered in incident:
+            if labels[i] != larger_class:
+                continue
+            for node in ordered[1:]:
+                if np.linalg.norm(data['vertices'][node] - data['vertices'][junction]) > reach * data['radius'][junction]:
+                    break
+                flag[node] = True
+    return flag
+
+
 def build_graph(data, settings):
     graph = nx.Graph()
     graph.add_nodes_from(range(len(data['vertices'])))
@@ -77,6 +121,7 @@ def build_graph(data, settings):
         arrays = dict(data, branch=np.zeros(len(graph), dtype=np.uint32),
                       label=np.zeros(len(graph), dtype=np.uint32),
                       segmentation_label=np.zeros(len(graph), dtype=np.uint32),
+                      ellipsoid_seed=np.zeros(len(graph), dtype=bool),
                       dist_from_largest=np.zeros(len(graph), dtype=np.uint32))
         return arrays, [], dict(vertices=len(graph), edges=graph.number_of_edges(),
             components=nx.number_connected_components(graph), branches=0,
@@ -109,13 +154,23 @@ def build_graph(data, settings):
     arrays['branch'][junctions] = 0
     arrays['label'][junctions] = 0
     arrays['dist_from_largest'][junctions] = 0
+    # Segmentation classes: sandwich first, then branch-end and junction labels on the result.
+    if settings.get('sandwich', True):
+        segmentation_classes, sandwiched = sandwich_labels(graph, paths, labels)
+    else:
+        segmentation_classes, sandwiched = labels.copy(), []
+    projected = np.where(owners >= 0, segmentation_classes[owners], 0).astype(np.uint32)
+    projected[junctions] = 0
     arrays['segmentation_label'], corrections = caliber_seed_labels(
-        graph, paths, labels, data, arrays['label'], settings.get('correct_branch_ends', True))
+        graph, paths, segmentation_classes, data, projected, settings.get('correct_branch_ends', True))
+    arrays['ellipsoid_seed'] = ellipsoid_seed_nodes(graph, paths, segmentation_classes, data,
+                                                    settings.get('ellipsoid_reach', 1.5))
     branches = []
     for i, path in enumerate(paths):
         length = np.linalg.norm(np.diff(data['vertices'][path], axis=0), axis=1).sum()
         branches.append(dict(id=i + 1, nodes=path, length_nm=float(length),
                              median_radius_nm=float(medians[i]), caliber_class=int(labels[i]),
+                             segmentation_class=int(segmentation_classes[i]),
                              hops_from_largest=int(hops[i])))
     angles = []
     for node in graph:
@@ -135,6 +190,7 @@ def build_graph(data, settings):
                    caliber_centers_nm=fit.cluster_centers_[order, 0].tolist(),
                    connectivity_edges=[[a + 1, b + 1] for a, b in sorted(connectivity.edges)],
                    branching_angles=angles, isolated_loops=loops, isolated_vertices=list(nx.isolates(graph)),
-                   branch_end_corrections=corrections, corrected_node_count=len(corrections),
+                   sandwiched_branches=sandwiched, branch_end_corrections=corrections,
+                   corrected_node_count=len(corrections), ellipsoid_seed_nodes=int(arrays['ellipsoid_seed'].sum()),
                    junction_caliber_labels=[dict(node=n, segmentation_class=int(arrays['segmentation_label'][n])) for n in junctions])
     return arrays, branches, metrics
