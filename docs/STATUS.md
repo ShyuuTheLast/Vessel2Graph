@@ -1,5 +1,126 @@
 # Status — 2026-09-09
 
+## Loop rule gains an anatomical floor — 2026-10-13
+
+`skeleton.thinning.min_loop_perimeter_nm` (default 70000) joins `loop_factor`; a loop is
+opened when its perimeter is below the larger of the two limits. Reason: on a slice of the
+BvEM human volume (label 363, x 6500-7500) the user confirmed by inspection that only the
+3 loops of 435-493 um are real and the other 411 (all <= 61 um) are not, yet their
+perimeter/(2*pi*max radius) reaches 7.0, while real mouse chunk 2 loops start near 5
+because a trunk on a loop inflates the largest radius. No single loop_factor separates
+both; the claimed "gap at 3" holds for mouse chunk 2 only. In absolute perimeter both agree:
+spurious <= 61 um, real >= ~82 um (mouse 82-109 um loops not individually inspected).
+Loop width over median diameter was also tried and overlaps slightly (8.6 vs 8.2).
+With the floor: human slice 414 -> 3 loops; mouse chunk 2 435 -> 351 (was 352);
+macaque unchanged (11 branches). 70 um is a capillary-mesh prior for cortex, not a
+geometric constant: set it per tissue, 0 disables. 35 tests pass, 3 skipped.
+BvEM human download and derived files: shared storage vessel2graph/bvem-human/.
+
+## Thinning is the default skeleton method — 2026-10-12
+
+`skeleton.method: thinning` (new default) replaces Kimimaro tracing; `method: kimimaro`
+keeps the TEASAR path unchanged. Implementation: src/vessel2graph/thinning.py, using
+scikit-image 0.24.0 Lee thinning (new pinned dependency) and `edt` for radii. No
+caliber-dependent parameter exists. Settings under `skeleton.thinning`:
+`closing_radius_nm` (0), `fill_holes` (true), `prune_factor` (1.5), `loop_factor` (3.0).
+
+Rules, all relative to local vessel size:
+- Stub pruning: a dead-end branch is removed when shorter than prune_factor x the LONG
+  half-width of the vessel cross-section beside its junction (32 transverse diameters by
+  ray casting, measured 1.5-3 junction radii away), plus one voxel diagonal. The inscribed
+  radius is the short half-width and needed a factor of 3 on flattened macaque sections.
+- Loop opening: a loop with perimeter below loop_factor x 2*pi x its largest node radius
+  cannot encircle a gap in its own vessel; its narrowest stretch between junctions is
+  deleted. On mouse chunk 2 loops separate cleanly: 173 below a ratio of 3, none from 3-5.
+- Tips within two voxels of a full-volume face are vessels leaving the volume and are
+  never pruned. Each face cross-section is pinned by a one-voxel whisker in padding,
+  because Lee thinning recedes from even-width free ends (a straight even-width bar
+  vanishes entirely). Interior dead ends can still recede; `components_without_skeleton`
+  in skeleton-thinning.json counts objects erased outright.
+
+Results through the unchanged graph/segment/report stages (pipeline-thinning/ on shared
+storage). Macaque label 1, closing 1024 nm, spacing as configured (320,256,256): 11 branches,
+7 endpoints, 5 junctions, one component, 1563.1 um, matching the accepted Kimimaro topology
+(11/7/5/1, 1611.5 um); skeleton stage 84 s of which closing 56 s, peak RSS 4.4 GiB.
+Mouse chunk 2 (212x950x700, labels 1-3, closing 512 nm): one component, 352 loops kept of
+435, 393 protected face tips, 560 endpoints, 2170 branches; skeleton stage 19 s, peak RSS
+1.8 GiB. Kimimaro on the same chunk: 587 s (const 5000) to 6 h 38 min (const 256), zero
+loops by construction. All mask voxels assigned in both runs. 34 tests pass, 3 skipped.
+
+Not established: accuracy against an independent reference; centring in thick vessels
+under 5:1 anisotropy; behaviour above ~0.6 billion voxels (graph clean-up uses NetworkX
+node objects and will need an array rewrite for the 11.5-billion-voxel mouse volume).
+pipeline.py changed and thinning.py joined SCIENTIFIC_MODULES: earlier stage markers are stale.
+
+Open data question: the public BvEM release (s3://bossdb-open-data/wei2024) lists the
+macaque volume at 176x176x240 nm (XYZ) with this file's exact shape, against the
+(320,256,256) ZYX recorded here as user-confirmed. Lengths and radii scale with it;
+topology does not. Unresolved; configs unchanged.
+
+## Slurm large-memory submission — 2026-10-11
+
+Added `--slurm` (write script) and `--submit` (write and sbatch) to every compute
+command, a validated `hpc:` config section (default partition bigmem), and
+src/vessel2graph/hpc.py. Scripts and logs go to `<output.directory>/slurm/`; jobs run
+under `/usr/bin/time -v` for measured peak RSS. check_memory now bounds available
+memory by the Slurm job allocation (SLURM_MEM_PER_NODE / PER_CPU) when present.
+segment.py changed, so scientific_code_digest changed: stage markers written before
+this date are stale. 29 tests pass, 3 viewer tests skipped. No job was submitted and
+no real-data stage has run. See CLUSTER_HANDOFF.md, "Large-memory Slurm jobs".
+
+## Misha core environment verified — 2026-10-09
+
+Loaded the site `miniconda` module (Conda 24.3.0) and created the workspace environment
+at `.tools/conda-envs/vessel2graph`, Python 3.11.17. Conda/pip download caches are inside
+`.tools`. Installed the package editable with its test extra and requirements-core.txt
+constraints, preserving every core pin, including Kimimaro 4.1.2 and cloud-volume 10.4.0.
+Existing user environments and shell profiles were not modified. Activate from the
+repository root with `source scripts/activate.sh`, or `module load miniconda` and
+`conda activate "$PWD/.tools/conda-envs/vessel2graph"`.
+
+Verification: pip check clean, core imports pass, synthetic Kimimaro tube produces
+34 vertices / 33 edges; pytest reports 28 passed, 3 skipped (optional Neuroglancer
+viewer is not installed). The Windows-era interrupt test replaced every time.sleep
+call, also interrupting POSIX subprocess.wait during cleanup; it now restores the
+real sleep before raising one simulated Ctrl+C. No production/scientific code changed.
+Reports: `outputs/misha-environment-check-2026-10-09.json` and
+`outputs/misha-pytest-2026-10-09.xml`. Observed Linux dependency snapshots:
+`locks/requirements-linux-py311.txt` (excludes editable project entry) and
+`locks/conda-linux-64.txt` (explicit Conda packages). Windows snapshots remain intact.
+Full-volume mouse estimation/tracing and optional viewer validation are still pending.
+
+## Misha migration inspection — 2026-10-09
+
+Source checkout is now on Yale Misha at commit `1904416`. The Windows environment
+described below is historical; this checkout has no workspace environment or
+`configs/default.local.yaml`. Site Miniconda modules are available. The existing
+user `yf354` environment supplied h5py for read-only input inspection only; it has
+not been validated as the project runtime. Linux installation/tests remain pending.
+All 17 accepted artifacts listed in PHASE2_ACCEPTED_MANIFEST.json are absent from
+this checkout and require separate transfer if needed for evaluation.
+
+User identified `mouse_microns-phase2_256-1280nm_bv_gt_crop_v4.h5` in their sibling
+`bloodvessel` directory as the target. A complete bounded-slab inspection confirms
+dataset `main`, shape ZYX (624,3570,5144), uint8, gzip, labels 0 and 1 only:
+234,974,095 foreground voxels and 11,224,211,825 background voxels. Select label 1.
+Use previously confirmed mouse spacing (1280,256,256) nm; the file has no dataset
+attributes supplying spacing. File size is 47,089,102 bytes, but the uncompressed
+array is 11,459,185,920 bytes (10.67 GiB). Foreground bounds, half-open ZYX, are
+[(0,624),(43,3570),(0,5144)]; a one-voxel halo crop is (624,3528,5144).
+Inspection report and exact local input path: ignored
+`outputs/misha-input-inspection-2026-10-09.json`. Original data were opened read-only.
+
+Current development allocation: Slurm job 2769044, partition devel, account kuan,
+8 CPUs, 64 GiB, five-hour time limit. The current code's additional-memory preflight
+is 128.07 GiB for estimation and 253.12 GiB for cropped tracing (256.13 GiB uncropped),
+before process RSS/reserve. These are heuristics, not measured peaks; the current
+allocation is inadequate for the full volume. Host-wide free memory must not be
+treated as the job allowance: check_memory currently reads psutil host availability
+and the configured process budget, without automatically reading Slurm/cgroup limits.
+Next: isolated Linux setup and synthetic tests, representative-crop validation, then
+a separately sized full-volume allocation with explicit resource budgets. No estimator
+changes, preprocessing, skeletonization, job submission or publication occurred.
+
 ## Phase 2 begun — 2026-09-10
 
 Publication authorized by owner: preserve the previous public version with the tag

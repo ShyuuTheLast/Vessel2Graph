@@ -17,7 +17,7 @@ ARTIFACTS = {'skeleton': ['skeleton.npz'], 'graph': ['graph.npz', 'branches.json
              'segment': ['segmentation.h5', 'segmentation.json'], 'report': ['report.json']}
 
 
-SCIENTIFIC_MODULES = ('pipeline.py', 'io.py', 'graph.py', 'segment.py')
+SCIENTIFIC_MODULES = ('pipeline.py', 'io.py', 'graph.py', 'segment.py', 'thinning.py')
 
 
 def scientific_code_digest(root=None):
@@ -33,7 +33,7 @@ def scientific_code_digest(root=None):
 
 def provenance():
     return {'python': platform.python_version(), 'platform': platform.platform(),
-            'packages': {p: version(p) for p in ('numpy', 'scipy', 'h5py', 'networkx', 'scikit-learn', 'kimimaro', 'cloud-volume')},
+            'packages': {p: version(p) for p in ('numpy', 'scipy', 'h5py', 'networkx', 'scikit-learn', 'scikit-image', 'kimimaro', 'cloud-volume')},
             'scientific_modules': list(SCIENTIFIC_MODULES),
             'code_sha256': scientific_code_digest()}
 
@@ -111,6 +111,16 @@ def execute(stage, cfg, output, meta):
                     data = skeleton_arrays(archive['skeletons'].item())
             else:
                 data = load_arrays(options['source'])
+        elif options['method'] == 'thinning':
+            from .thinning import thin_skeleton
+            check_memory(cfg['resources'], int(np.prod(meta['shape'])) * 2)
+            # Always cropped: thinning and the distance transform scale with the occupied box.
+            mask, offset = crop_empty_background(load_mask(cfg['input']))
+            check_memory(cfg['resources'], int(mask.size) * 12)
+            data, report = thin_skeleton(mask, cfg['input']['voxel_size_nm'], options['thinning'],
+                offset=offset, full_shape=meta['shape'], parallel=options['parallel'])
+            write_json(output / 'skeleton-thinning.json', dict(report, original_shape=list(meta['shape']),
+                cropped_shape=list(mask.shape), offset_zyx_voxels=offset.tolist()))
         else:
             import kimimaro
             crop=options.get('crop_empty_border',False)

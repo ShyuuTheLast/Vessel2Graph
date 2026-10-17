@@ -1,6 +1,7 @@
 """Headless command line interface."""
 import argparse
 import json
+import subprocess
 from .config import load_config
 from .pipeline import run
 
@@ -15,7 +16,11 @@ def main(argv=None):
     parser.add_argument('--method', choices=['volume','cross-section'], help='Estimator method (default: volume)')
     parser.add_argument('--fill-holes', action='store_true', help='Explicitly fill enclosed holes for volume estimation and its candidate')
     parser.add_argument('--closing-radius-nm', type=float, default=0, help='Explicit physical-ball closing radius before optional filling (default: 0)')
+    parser.add_argument('--slurm', action='store_true', help='Write a Slurm script for this command instead of running it')
+    parser.add_argument('--submit', action='store_true', help='Write the Slurm script and submit it with sbatch')
     args = parser.parse_args(argv)
+    if (args.slurm or args.submit) and args.command in ('status', 'view'):
+        parser.error('--slurm/--submit are not supported for status or view')
     if (args.method or args.fill_holes or args.closing_radius_nm) and args.command != 'estimate':
         parser.error('--method/--fill-holes are only supported for estimate')
     if args.calibration and (args.method or args.fill_holes or args.closing_radius_nm):
@@ -29,6 +34,21 @@ def main(argv=None):
     if args.calibration and args.command not in ('calibrate','estimate'):
         parser.error('--calibration is only supported for calibrate or estimate')
     try:
+        if args.slurm or args.submit:
+            from pathlib import Path
+            from .hpc import write_job, submit
+            forwarded = ['--config', str(Path(args.config).resolve())]
+            forwarded += ['--force'] * args.force + ['--fill-holes'] * args.fill_holes
+            for flag, value in [('--reference', args.reference), ('--calibration', args.calibration)]:
+                if value:
+                    forwarded += [flag, str(Path(value).resolve())]
+            if args.method:
+                forwarded += ['--method', args.method]
+            if args.closing_radius_nm:
+                forwarded += ['--closing-radius-nm', repr(args.closing_radius_nm)]
+            script = write_job(load_config(args.config), args.command, forwarded)
+            print(submit(script) if args.submit else f'Wrote {script}\nSubmit with: sbatch {script}')
+            return 0
         if args.command == 'calibrate':
             from .calibration import calibrate
             print(json.dumps(calibrate(load_config(args.config),args.reference,args.calibration),indent=2))
@@ -52,7 +72,7 @@ def main(argv=None):
             return 0
         result = run(load_config(args.config), target='report' if args.command in ('run', 'status') else args.command,
                      force=args.force, status=args.command == 'status')
-    except (ValueError, OSError, KeyError, MemoryError, ImportError) as exc:
+    except (ValueError, OSError, KeyError, MemoryError, ImportError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f'Error: {exc}\n')
     print(json.dumps(result, indent=2))
     return 0

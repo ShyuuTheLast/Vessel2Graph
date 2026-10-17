@@ -23,8 +23,9 @@ The goal is to make vascular analysis **topology-aware, customizable, and reprod
 - Keep input selection, physical spacing, processing choices, and outputs explicit.
 
 The packaged pipeline carries this original approach into configurable, reusable stages.
-It supports generating a skeleton with [Kimimaro](https://github.com/seung-lab/kimimaro),
-loading a saved skeleton, and estimating TEASAR settings from the binary input itself.
+It generates a skeleton by topological thinning (the default: loops are preserved and no
+caliber-dependent parameter is needed) or with [Kimimaro](https://github.com/seung-lab/kimimaro),
+loads a saved skeleton, and can estimate TEASAR settings from the binary input itself.
 
 ## Explore the vessel network
 

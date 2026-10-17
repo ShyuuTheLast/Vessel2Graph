@@ -10,6 +10,10 @@ DEFAULTS = {
     'output': {'directory': None},
     'skeleton': {
         'source': None, 'format': 'arrays',
+        # thinning needs no caliber-dependent parameter; kimimaro uses teasar_params below.
+        'method': 'thinning',
+        'thinning': {'closing_radius_nm': 0, 'fill_holes': True, 'prune_factor': 1.5, 'loop_factor': 3.0,
+                     'min_loop_perimeter_nm': 70000, 'protect_face_tips': False},
         'teasar_params': {'scale': 1.5, 'const': 300, 'pdrf_scale': 100000, 'pdrf_exponent': 4,
                           'soma_detection_threshold': float('inf'),
                           'soma_acceptance_threshold': float('inf'),
@@ -22,6 +26,8 @@ DEFAULTS = {
     'segment': {'attribute': 'branch', 'method': 'surface_chessboard', 'surface_samples': 100,
                 'query_batch_size': 100000, 'read_slices': 8, 'compression': 'gzip'},
     'resources': {'max_memory_gib': 10, 'reserve_memory_gib': 2},
+    'hpc': {'partition': 'bigmem', 'account': None, 'cpus': 4, 'mem_gib': None,
+            'time': '1-00:00:00', 'setup': []},
     'estimation': {'erosion_steps': 16, 'sample_count': 1024, 'random_seed': 42,
                    'coverage_quantile': 0.9},
     'visualization': {'layers': ['input_mask', 'branch_segmentation', 'skeleton_by_branch'],
@@ -81,6 +87,15 @@ def load_config(path):
         raise ValueError('input.labels must be nonzero positive integer labels')
     if cfg['skeleton']['format'] not in ('arrays', 'legacy_npz'):
         raise ValueError('skeleton.format must be arrays or legacy_npz')
+    if cfg['skeleton']['method'] not in ('thinning', 'kimimaro'):
+        raise ValueError('skeleton.method must be thinning or kimimaro')
+    thinning = cfg['skeleton']['thinning']
+    for key in ('fill_holes', 'protect_face_tips'):
+        if type(thinning[key]) is not bool:
+            raise ValueError(f'skeleton.thinning.{key} must be Boolean')
+    # Zero disables closing, pruning or loop opening respectively.
+    for key in ('closing_radius_nm', 'prune_factor', 'loop_factor', 'min_loop_perimeter_nm'):
+        _positive(thinning[key], 'skeleton.thinning.' + key, zero=True)
     for section, keys in [('skeleton', ['fix_branching', 'fix_borders', 'crop_empty_border']), ('graph', ['correct_branch_ends'])]:
         for key in keys:
             if type(cfg[section][key]) is not bool:
@@ -94,6 +109,19 @@ def load_config(path):
         raise ValueError('surface_samples must be at least 4')
     for key, value in cfg['resources'].items():
         _positive(value, key)
+    hpc = cfg['hpc']
+    _positive(hpc['cpus'], 'hpc.cpus', integer=True)
+    if hpc['mem_gib'] is not None:
+        _positive(hpc['mem_gib'], 'hpc.mem_gib')
+    # Unquoted HH:MM:SS is a YAML 1.1 sexagesimal integer; require the quoted string.
+    if not isinstance(hpc['time'], str) or not hpc['time'].strip():
+        raise ValueError('hpc.time must be a quoted Slurm time string, e.g. "1-00:00:00"')
+    if not isinstance(hpc['partition'], str) or not hpc['partition'].strip():
+        raise ValueError('hpc.partition is required')
+    if hpc['account'] is not None and not isinstance(hpc['account'], str):
+        raise ValueError('hpc.account must be a string or null')
+    if not isinstance(hpc['setup'], list) or any(not isinstance(x, str) for x in hpc['setup']):
+        raise ValueError('hpc.setup must be a list of shell lines')
     params = cfg['skeleton']['teasar_params']
     for key, value in params.items():
         if key == 'max_paths' and value is None:

@@ -20,21 +20,34 @@ These artifacts and input data are excluded from Git; transfer separately if nee
 
 ## Linux setup
 
-Use the cluster-supported Conda/Python installation:
+Use Misha's Miniconda module, with the environment and caches inside the workspace.
+From the repository root, create and install once:
 
 ```sh
-conda env create -f environment.yml
-conda activate vessel2graph
-python -m pip install -e ".[test]" -c requirements-core.txt
+module load miniconda
+CONDA_PKGS_DIRS="$PWD/.tools/conda-pkgs" XDG_CACHE_HOME="$PWD/.tools/cache" \
+  conda env create --prefix "$PWD/.tools/conda-envs/vessel2graph" -f environment.yml --yes
+conda activate "$PWD/.tools/conda-envs/vessel2graph"
+PIP_CACHE_DIR="$PWD/.tools/pip-cache" python -m pip install -e ".[test]" -c requirements-core.txt
 python -m pip check
 python scripts/check_environment.py
 python -m pytest -q
-python -m pip freeze > requirements-linux-observed.txt
 ```
 
-Linux execution is pending verification. Windows lockfiles are historical, not Linux
-specifications. Current estimation is CPU-only. Site modules, scheduler partition/account,
-and allocation sizes must be selected on Misha; no cluster job has been submitted.
+For subsequent Bash sessions, `source scripts/activate.sh` loads the module and
+activates this environment. Equivalently, run `module load miniconda` followed by
+`conda activate "$PWD/.tools/conda-envs/vessel2graph"` from the repository root.
+The optional Neuroglancer viewer is installed separately with `".[view]"` using
+the same constraints; its tests are skipped in a core-only environment.
+
+Misha core environment verified on 2026-10-09: Python 3.11.17, pip check clean,
+synthetic tube 34 vertices / 33 edges, 28 tests passed and 3 optional viewer tests
+skipped. Observed dependencies are recorded in `locks/requirements-linux-py311.txt`
+(project installed separately with `-e .`) and `locks/conda-linux-64.txt`.
+Windows lockfiles remain historical, not Linux specifications. Current estimation
+is CPU-only. Real-data Linux execution remains pending; select scheduler resources
+for the dataset before submitting a production job. The initial development allocation
+has 64 GiB; the inspected full mouse exceeds that budget even after empty-border cropping.
 
 Copy `configs/example.yaml` to `configs/default.local.yaml`, edit input paths, labels,
 spacing, memory and a unique output directory. Mouse spacing is (1280,256,256) nm.
@@ -50,6 +63,25 @@ the actual path. Add `--fill-holes --closing-radius-nm VALUE` only when preparat
 explicitly chosen. The candidate uses the prepared mask for BOTH estimation and tracing.
 Request one CPU initially (`skeleton.parallel: 1`). Budget maximum process memory plus
 reserve/overhead in the scheduler allocation. Do not infer large-job memory from macaque.
+
+## Large-memory Slurm jobs
+
+Tracing one connected vessel is a single in-memory Kimimaro call, so each stage is one
+large-memory job, not an array. Any compute command accepts `--slurm`, which writes
+`<output.directory>/slurm/<command>.sbatch` and prints the `sbatch` line, or `--submit`,
+which also submits it:
+
+```sh
+python -m vessel2graph estimate --config configs/default.local.yaml --slurm
+python -m vessel2graph graph --config runs/dataset/estimation-volume-v2/candidate.yaml --slurm
+```
+
+The `hpc:` config section sets partition (default `bigmem`; Misha has two 2 TB nodes),
+CPUs, time and optional account. The request is `resources.max_memory_gib +
+reserve_memory_gib` unless `hpc.mem_gib` is set, so raise `max_memory_gib` to what the
+stage needs. Keep `hpc.time` quoted. The job runs under `/usr/bin/time -v`, so the log
+ends with the measured peak RSS and wall time. Inside a job, the memory preflight now
+compares against the Slurm allocation instead of host-wide free memory.
 
 ## Limits and next investigation
 

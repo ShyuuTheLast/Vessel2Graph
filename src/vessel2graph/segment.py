@@ -5,11 +5,16 @@ import h5py
 import numpy as np
 import psutil
 from scipy.spatial import cKDTree
+from .hpc import job_memory_limit
 
 
 def check_memory(resources, additional=0):
     rss = psutil.Process().memory_info().rss
     available = psutil.virtual_memory().available
+    # Inside a Slurm job the allowance is the job's, not the host's free memory.
+    limit = job_memory_limit()
+    if limit is not None:
+        available = min(available, limit - rss)
     if rss + additional > resources['max_memory_gib'] * 1024**3:
         raise MemoryError('Estimated process memory exceeds resources.max_memory_gib')
     if available - additional < resources['reserve_memory_gib'] * 1024**3:

@@ -1,4 +1,5 @@
 from copy import deepcopy
+from pathlib import Path
 import json
 import h5py
 import networkx as nx
@@ -67,6 +68,18 @@ def test_pipeline_resume_and_selection(config):
 
 def test_generated_skeleton(config):
     config['skeleton']['source'] = None
+    assert config['skeleton']['method'] == 'thinning'
+    # Odd width: thinning erases a free-standing, perfectly even-width bar.
+    with h5py.File(config['input']['path'], 'r+') as f:
+        f['main'][2:14, 6:11, 6:11] = 1
+    assert run(config, target='graph')['graph'] == 'complete'
+    report = json.loads((Path(config['output']['directory']) / 'skeleton-thinning.json').read_text())
+    assert report['skeleton_voxels'] > 0 and report['loops_after'] == 0
+
+
+def test_generated_kimimaro_skeleton(config):
+    config['skeleton']['source'] = None
+    config['skeleton']['method'] = 'kimimaro'
     config['skeleton']['teasar_params']['const'] = 1
     assert run(config, target='graph')['graph'] == 'complete'
 
@@ -257,6 +270,7 @@ def test_viewer_interrupt_stops_busy_worker(monkeypatch, capsys):
     import time
     from vessel2graph.viewer import serve
     real_popen = subprocess.Popen
+    real_sleep = time.sleep
     workers = []
     def start_busy_worker(args, **kwargs):
         # A real process with long-lived executor work, independent of NG availability.
@@ -266,6 +280,8 @@ def test_viewer_interrupt_stops_busy_worker(monkeypatch, capsys):
         workers.append(process)
         return process
     def interrupt(delay):
+        # Simulate one Ctrl+C; POSIX subprocess.wait also sleeps during cleanup.
+        monkeypatch.setattr(time, 'sleep', real_sleep)
         raise KeyboardInterrupt
     monkeypatch.setattr(subprocess, 'Popen', start_busy_worker)
     monkeypatch.setattr(time, 'sleep', interrupt)
@@ -274,3 +290,28 @@ def test_viewer_interrupt_stops_busy_worker(monkeypatch, capsys):
     assert time.monotonic() - start < 4
     assert workers[0].poll() is not None
     assert 'Viewer stopped.' in capsys.readouterr().out
+
+
+def test_slurm_script_and_job_memory_limit(config, tmp_path, monkeypatch, capsys):
+    from vessel2graph.cli import main
+    from vessel2graph.segment import check_memory
+    path = tmp_path / 'config.yaml'
+    assert main(['estimate', '--config', str(path), '--fill-holes', '--closing-radius-nm', '1024', '--slurm']) == 0
+    script = tmp_path / 'run' / 'slurm' / 'estimate.sbatch'
+    text = script.read_text()
+    assert '--mem=4107M' in text and '--partition=bigmem' in text
+    assert f'estimate --config {path} --fill-holes --closing-radius-nm 1024.0' in text
+    assert str(script) in capsys.readouterr().out
+    # The job allowance, not host-wide free memory, bounds the preflight.
+    monkeypatch.setenv('SLURM_MEM_PER_NODE', '1024')
+    resources = dict(max_memory_gib=1024, reserve_memory_gib=0.25)
+    with pytest.raises(MemoryError, match='reserve'):
+        check_memory(resources, 2**30)
+    monkeypatch.delenv('SLURM_MEM_PER_NODE')
+    monkeypatch.delenv('SLURM_MEM_PER_CPU', raising=False)
+    check_memory(resources, 2**20)
+    raw = yaml.safe_load(path.read_text())
+    raw['hpc'] = {'time': 36000}
+    path.write_text(yaml.safe_dump(raw))
+    with pytest.raises(ValueError, match='hpc.time'):
+        load_config(path)

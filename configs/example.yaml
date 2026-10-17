@@ -9,11 +9,22 @@ output:
   directory: ../runs/dataset
 skeleton:
   source: null
-  crop_empty_border: true
+  method: thinning  # or kimimaro (uses teasar_params and crop_empty_border)
+  thinning:
+    closing_radius_nm: 0  # seal pores first; too large fuses neighbouring vessels
+    fill_holes: true
+    prune_factor: 1.5     # x local long half-width
+    loop_factor: 3.0      # x 2*pi*radius
+    min_loop_perimeter_nm: 70000  # smallest real vessel loop; 0 disables
   parallel: 1
 resources:
   max_memory_gib: 16
   reserve_memory_gib: 2
+hpc:  # used only by --slurm / --submit
+  partition: bigmem
+  cpus: 4
+  mem_gib: null  # null requests max_memory_gib + reserve_memory_gib
+  time: "1-00:00:00"  # keep quoted
 estimation:
   sample_count: 1024
   erosion_steps: 16

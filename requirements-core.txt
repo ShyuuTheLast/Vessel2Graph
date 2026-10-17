@@ -4,6 +4,7 @@ scipy==1.14.1
 h5py==3.11.0
 networkx==3.3
 scikit-learn==1.5.1
+scikit-image==0.24.0
 PyYAML==6.0.2
 kimimaro==4.1.2
 # Match the original repository; current cloud-volume/osteoid breaks 4.1.2 merging.

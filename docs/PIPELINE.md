@@ -9,7 +9,8 @@ restores physical coordinates afterward. No accepted baseline should be recomput
 
 ## Stages and files
 
-1. `skeleton`: load selected HDF5 labels and run Kimimaro, or import a saved skeleton.
+1. `skeleton`: load selected HDF5 labels and thin them (default) or trace with Kimimaro,
+   or import a saved skeleton. Thinning also writes `skeleton-thinning.json` (counts, timings).
    Writes `skeleton.npz`: vertices (physical ZYX nm), edges (zero-based vertex indices),
    radius (nm), object_id, schema_version. New archives do not require pickle.
 2. `graph`: writes `graph.npz`, `branches.json`, and `metrics.json`.
@@ -19,7 +20,7 @@ restores physical coordinates afterward. No accepted baseline should be recomput
 Each stage records completion, elapsed time, fingerprint, and artifact SHA256 hashes in
 `<stage>.stage.json`. Input bytes, settings, upstream outputs, Python/platform, dependency
 versions and scientific module source influence reuse. Changing only segmentation settings reuses
-skeleton and graph. Changes to pipeline.py, io.py, graph.py or segment.py conservatively invalidate
+skeleton and graph. Changes to pipeline.py, io.py, graph.py, segment.py or thinning.py conservatively invalidate
 all stages. Viewer/CLI edits do not; effective scientific configuration values are fingerprinted
 separately, so configuration defaults that change those values still invalidate affected stages.
 The new fingerprint format makes pre-checkpoint stage markers stale once; it does not rewrite
@@ -45,7 +46,15 @@ No current-working-directory dependency exists for paths declared inside the dat
   loading of the old `skeletons` dictionary. Use legacy mode only for trusted files.
   Imported skeletons must already use physical ZYX nm and correspond to the configured input;
   old archives cannot verify spacing or input lineage themselves.
-- `skeleton.teasar_params`: fixed Kimimaro parameters. When source is set these are recorded
+- `skeleton.method`: `thinning` (default) or `kimimaro`. Thinning preserves loops and has no
+  caliber-dependent parameter; see STATUS.md for its rules and limits.
+- `skeleton.thinning`: `closing_radius_nm` (physical-ball closing before thinning, 0 = off;
+  it can fuse vessels that run closer than twice the radius), `fill_holes`, `prune_factor`
+  (dead ends shorter than this multiple of the local long half-width are removed, 0 = off),
+  `loop_factor` (loops below this multiple of 2*pi*radius are opened, 0 = off),
+  `min_loop_perimeter_nm` (smallest real vessel loop for the tissue, default 70000; a loop
+  below either limit is opened, 0 = off).
+- `skeleton.teasar_params`: fixed Kimimaro parameters, used only with `method: kimimaro`. When source is set these are recorded
   but not executed. The supplied macaque values describe the legacy run. For new datasets,
   choose values explicitly; defaults are not an automatically calibrated vessel model.
 - `skeleton.parallel`: positive process count; `dust_threshold` in voxels; `fix_branching`

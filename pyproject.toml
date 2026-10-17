@@ -9,7 +9,7 @@ description = "Configuration-driven vessel skeleton, graph and instance segmenta
 requires-python = ">=3.10,<3.13"
 dependencies = [
   "numpy>=1.26,<2", "scipy>=1.14,<1.15", "h5py>=3.11,<4", "networkx>=3.3,<4",
-  "scikit-learn>=1.5,<1.6", "PyYAML>=6,<7", "kimimaro==4.1.2", "cloud-volume==10.4.0",
+  "scikit-learn>=1.5,<1.6", "scikit-image==0.24.0", "PyYAML>=6,<7", "kimimaro==4.1.2", "cloud-volume==10.4.0",
   "psutil>=5",
   "edt==2.4.1", "connected-components-3d==3.18.0", "fill-voids==2.1.2",
 ]

@@ -5,8 +5,8 @@ dense branch/caliber labels, with saved stages, content-checked resume and Neuro
 
 Version 0.2 adds **experimental TEASAR estimation from binary input and physical spacing**,
 explicit physical-radius closing, and branch-wise skeleton comparisons. The macaque result
-was visually accepted by its owner. Mixed-caliber generalization and Linux cluster execution
-remain to be evaluated.
+was visually accepted by its owner. Linux core imports and synthetic tests pass on Misha;
+mixed-caliber generalization and full-volume cluster execution remain to be evaluated.
 
 ## Install
 
