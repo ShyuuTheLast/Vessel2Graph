@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import numpy as np
 import pytest
-from vessel2graph.graph import branch_paths
+from VesselEMPy.graph import branch_paths
 
 spec = importlib.util.spec_from_file_location('subdivision', Path(__file__).resolve().parents[1]/'scripts/analyze_branch_subdivision.py')
 module = importlib.util.module_from_spec(spec)

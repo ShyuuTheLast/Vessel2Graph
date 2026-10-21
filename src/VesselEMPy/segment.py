@@ -77,7 +77,7 @@ def remove_dust(volume, ratio, resources):
 def segment(data, cfg, destination):
     settings, resources = cfg['segment'], cfg['resources']
     spacing = np.asarray(cfg['input']['voxel_size_nm'])
-    workers = settings['workers'] or len(os.sched_getaffinity(0))
+    workers = settings['workers'] or (len(os.sched_getaffinity(0)) if hasattr(os, 'sched_getaffinity') else (os.cpu_count() or 1))
     with h5py.File(cfg['input']['path'], 'r') as source:
         ds = source[cfg['input']['dataset']]
         shape = ds.shape

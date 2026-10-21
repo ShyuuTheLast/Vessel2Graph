@@ -7,8 +7,8 @@ import cc3d
 from scipy.ndimage import gaussian_filter1d
 from scipy.signal import find_peaks
 from sklearn.mixture import GaussianMixture
-from vessel2graph.io import write_json
-from vessel2graph.estimation import cross_sections, propose_exclusion
+from VesselEMPy.io import write_json
+from VesselEMPy.estimation import cross_sections, propose_exclusion
 
 
 def main():

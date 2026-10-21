@@ -4,9 +4,9 @@ import numpy as np
 import h5py
 import pytest
 import yaml
-from vessel2graph.calibration import calibrate, estimate_calibrated, exclusion_from_model
-from vessel2graph.config import DEFAULTS
-from vessel2graph.io import save_arrays
+from VesselEMPy.calibration import calibrate, estimate_calibrated, exclusion_from_model
+from VesselEMPy.config import DEFAULTS
+from VesselEMPy.io import save_arrays
 
 
 def setup_case(tmp_path):
@@ -49,7 +49,7 @@ def test_calibration_and_application_without_reference(tmp_path,monkeypatch):
     assert model['fixed_teasar_context']['soma_detection_threshold']=='.inf'
     def forbidden(*args,**kwargs):
         raise AssertionError('Production estimation must not load a reference graph')
-    monkeypatch.setattr('vessel2graph.calibration.load_arrays',forbidden)
+    monkeypatch.setattr('VesselEMPy.calibration.load_arrays',forbidden)
     (ref/'graph.npz').unlink()
     result=estimate_calibrated(cfg,target)
     assert result['selected_voxels']==45
@@ -69,6 +69,6 @@ def test_context_mismatch_rejected_before_measurement(tmp_path,monkeypatch):
     cfg['skeleton']['teasar_params']['pdrf_exponent']=8
     def forbidden(*args,**kwargs):
         raise AssertionError('Should reject before EDT')
-    monkeypatch.setattr('vessel2graph.calibration.measure',forbidden)
+    monkeypatch.setattr('VesselEMPy.calibration.measure',forbidden)
     with pytest.raises(ValueError,match='pdrf_exponent'):
         estimate_calibrated(cfg,target)

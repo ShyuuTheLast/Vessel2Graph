@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 import edt
-from vessel2graph.estimation import cross_sections, propose_exclusion
+from VesselEMPy.estimation import cross_sections, propose_exclusion
 
 
 def test_round_tube_cross_sections_and_units():

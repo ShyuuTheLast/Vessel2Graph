@@ -1,7 +1,10 @@
 # Local environment
 
-Miniconda is installed at `.tools/miniconda3`. The dedicated environment is
-`.tools/miniconda3/envs/vessel2graph` and uses Python 3.11.16. Original standalone interpreters
+Miniconda is installed at `.tools/miniconda3`. New environments use
+`.tools/miniconda3/envs/VesselEMPy`; activation and setup also reuse the existing
+`.tools/miniconda3/envs/vessel2graph` environment (verified with Python 3.11.16).
+See [migration](MIGRATION.md) to replace the installed package in an existing environment.
+Original standalone interpreters
 (3.10.6, 3.11.9, 3.14.3 under AppData/Local/Python) remain unchanged.
 
 From the project directory in PowerShell:
@@ -29,8 +32,9 @@ core pins using binary wheels. For exact reconstruction on Windows x64, use the 
 Conda file first and then the full pip snapshot:
 
 ```powershell
-& .\.tools\miniconda3\Scripts\conda.exe create --prefix .\.tools\miniconda3\envs\vessel2graph --file locks/conda-win-64.txt --yes
-& .\.tools\miniconda3\envs\vessel2graph\python.exe -m pip install --only-binary=:all: -r locks/requirements-win-py311.txt
+& .\.tools\miniconda3\Scripts\conda.exe create --prefix .\.tools\miniconda3\envs\VesselEMPy --file locks/conda-win-64.txt --yes
+& .\.tools\miniconda3\envs\VesselEMPy\python.exe -m pip install --only-binary=:all: -r locks/requirements-win-py311.txt
+& .\.tools\miniconda3\envs\VesselEMPy\python.exe -m pip install -e ".[test]" -c requirements-core.txt
 ```
 
 Run reconstruction only into a new environment. The lock includes transitive packages from the

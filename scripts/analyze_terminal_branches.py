@@ -5,7 +5,7 @@ import json
 import networkx as nx
 import numpy as np
 from scipy.spatial import cKDTree
-from vessel2graph.io import load_arrays, write_json
+from VesselEMPy.io import load_arrays, write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'runs/macaque-estimated-v1'

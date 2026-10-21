@@ -8,11 +8,11 @@ import pytest
 import yaml
 from scipy.ndimage import distance_transform_cdt
 from scipy.spatial import cKDTree
-from vessel2graph.config import load_config
-from vessel2graph.graph import branch_paths, build_graph, caliber_seed_labels
-from vessel2graph.io import save_arrays
-from vessel2graph.pipeline import run
-from vessel2graph.segment import surface_seeds
+from VesselEMPy.config import load_config
+from VesselEMPy.graph import branch_paths, build_graph, caliber_seed_labels
+from VesselEMPy.io import save_arrays
+from VesselEMPy.pipeline import run
+from VesselEMPy.segment import surface_seeds
 
 
 def test_branch_edges_and_isolated_loop():
@@ -85,7 +85,7 @@ def test_generated_kimimaro_skeleton(config):
 
 
 def test_viewer_changes_do_not_invalidate_science(config, tmp_path):
-    from vessel2graph.pipeline import scientific_code_digest, SCIENTIFIC_MODULES
+    from VesselEMPy.pipeline import scientific_code_digest, SCIENTIFIC_MODULES
     for name in SCIENTIFIC_MODULES:
         (tmp_path / name).write_text('science')
     initial = scientific_code_digest(tmp_path)
@@ -174,7 +174,7 @@ def test_junction_has_no_branch_seed_and_stats_do_not_change(config):
 def test_viewer_reads_saved_artifacts_and_checks_volume_type(config):
     ng = pytest.importorskip('neuroglancer')
     from contextlib import ExitStack
-    from vessel2graph.viewer import make_viewer, SelectedMask
+    from VesselEMPy.viewer import make_viewer, SelectedMask
     run(config)
     config['visualization']['layers'] = ['input_mask', 'branch_segmentation', 'skeleton_by_branch', 'junctions', 'corrected_nodes']
     config['visualization']['hidden_layers'] = ['junctions']
@@ -212,7 +212,7 @@ def test_viewer_config_validation_and_relative_paths(tmp_path):
 
 def test_actual_neuroglancer_mesh_from_hdf5(tmp_path):
     ng = pytest.importorskip('neuroglancer')
-    from vessel2graph.viewer import VolumeArray, SelectedMask, local_volume
+    from VesselEMPy.viewer import VolumeArray, SelectedMask, local_volume
     raw = np.zeros((16,20,24), np.uint32)
     raw[3:10,4:12,5:15] = 11
     raw[12:14,15:17,18:20] = 2
@@ -239,7 +239,7 @@ def test_radius_volume_and_image_layer(config):
     ng = pytest.importorskip('neuroglancer')
     from pathlib import Path
     from contextlib import ExitStack
-    from vessel2graph.viewer import make_viewer
+    from VesselEMPy.viewer import make_viewer
     config['segment']['attribute'] = 'radius'
     run(config)
     with h5py.File(Path(config['output']['directory']) / 'segmentation.h5', 'r') as f:
@@ -268,7 +268,7 @@ def test_viewer_interrupt_stops_busy_worker(monkeypatch, capsys):
     import subprocess
     import sys
     import time
-    from vessel2graph.viewer import serve
+    from VesselEMPy.viewer import serve
     real_popen = subprocess.Popen
     real_sleep = time.sleep
     workers = []
@@ -292,15 +292,25 @@ def test_viewer_interrupt_stops_busy_worker(monkeypatch, capsys):
     assert 'Viewer stopped.' in capsys.readouterr().out
 
 
+def test_pipeline_without_cpu_affinity_or_cpu_count(config, monkeypatch):
+    import os
+    monkeypatch.delattr(os, 'sched_getaffinity', raising=False)
+    monkeypatch.setattr(os, 'cpu_count', lambda: None)
+    assert set(run(config).values()) == {'complete'}
+
+
 def test_slurm_script_and_job_memory_limit(config, tmp_path, monkeypatch, capsys):
-    from vessel2graph.cli import main
-    from vessel2graph.segment import check_memory
+    import shlex
+    from VesselEMPy.cli import main
+    from VesselEMPy.segment import check_memory
     path = tmp_path / 'config.yaml'
     assert main(['estimate', '--config', str(path), '--fill-holes', '--closing-radius-nm', '1024', '--slurm']) == 0
     script = tmp_path / 'run' / 'slurm' / 'estimate.sbatch'
     text = script.read_text()
     assert '--mem=4107M' in text and '--partition=bigmem' in text
-    assert f'estimate --config {path} --fill-holes --closing-radius-nm 1024.0' in text
+    invocation = shlex.split(next(line for line in text.splitlines() if line.startswith('/usr/bin/time')))
+    assert invocation[3:] == ['-m', 'VesselEMPy', 'estimate', '--config', str(path), '--fill-holes', '--closing-radius-nm', '1024.0']
+    assert '#SBATCH --job-name=VesselEMPy-estimate' in text
     assert str(script) in capsys.readouterr().out
     # The job allowance, not host-wide free memory, bounds the preflight.
     monkeypatch.setenv('SLURM_MEM_PER_NODE', '1024')

@@ -1,5 +1,34 @@
 # Status — 2026-09-09
 
+## VesselEMPy package and command — 2026-10-21
+
+User authorized the name VesselEMPy for the repository, Python distribution,
+import package and console command. Version 0.3.0 moves source to
+`src/VesselEMPy`, updates analysis-script imports, the viewer subprocess,
+generated Slurm commands/job names, current documentation and repository links.
+Use `import VesselEMPy`, `python -m VesselEMPy`, or `VesselEMPy` with this exact
+capitalization. See MIGRATION.md for existing installations.
+
+New environments default to VesselEMPy; activation helpers recognize the existing
+vessel2graph environment without relocating it. Old generated job files must be
+regenerated before submission. Historical entries below, frozen manifests,
+dependency snapshots and reference-directory paths retain their original names.
+No datasets, accepted outputs, numerical settings or dependency pins changed.
+
+Windows verification exposed the cluster code's unconditional use of
+`os.sched_getaffinity`. Automatic worker selection now falls back to `os.cpu_count`
+or one worker on platforms without that function; explicit worker settings and
+Linux affinity behavior remain intact. The segment.py source change invalidates
+earlier stage markers under the existing scientific code-hash check. Completed
+run artifacts are preserved; no production experiment was rerun.
+
+Validation: 47 tests pass in an isolated Windows environment, including optional
+viewer tests, Slurm command parsing and the worker fallback. Editable and wheel
+installations pass; the installed wheel's package version, module command and
+console command report VesselEMPy 0.3.0. Bash activation passes mocked legacy,
+new, both-present and missing-environment cases; PowerShell helpers parse cleanly.
+No job was submitted to Misha. Its checkout needs the documented pull/reinstall.
+
 ## Why the caliber post-processing looks the way it does — 2026-10-20
 
 Evidence behind the 2026-10-17 port, from experiments on the full mouse volume (thinning

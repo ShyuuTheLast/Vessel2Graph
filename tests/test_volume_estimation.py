@@ -3,10 +3,10 @@ import pytest
 import h5py
 import yaml
 from copy import deepcopy
-from vessel2graph.config import DEFAULTS
-from vessel2graph.volume_estimation import estimate_volume
-from vessel2graph.volume_estimation import prepare,derive_parameters
-from vessel2graph.volume_estimation import close_physical
+from VesselEMPy.config import DEFAULTS
+from VesselEMPy.volume_estimation import estimate_volume
+from VesselEMPy.volume_estimation import prepare,derive_parameters
+from VesselEMPy.volume_estimation import close_physical
 
 
 def test_closing_seals_exterior_channel_and_preserves_crop_edges():
@@ -94,7 +94,7 @@ def test_end_to_end_uses_binary_input_not_existing_parameters_or_skeleton(tmp_pa
         cfg['skeleton']['teasar_params'][key]=999999
     def forbidden(*args,**kwargs):
         raise AssertionError('No skeleton artifact may be loaded by estimator')
-    monkeypatch.setattr('vessel2graph.io.load_arrays',forbidden)
+    monkeypatch.setattr('VesselEMPy.io.load_arrays',forbidden)
     result=estimate_volume(cfg,fill_holes=True)
     assert result['accepted_profiles']>=16
     assert all(v!=999999 for v in result['proposal'].values())

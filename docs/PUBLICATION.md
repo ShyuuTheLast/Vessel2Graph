@@ -1,5 +1,10 @@
 # Public source preparation
 
+Current name: **VesselEMPy**, repository https://github.com/ShyuuTheLast/VesselEMPy.
+Version 0.3 adopts this name for the Python package and command as well. Earlier
+archive names and preparation records below refer to the historical releases.
+See [migration](MIGRATION.md) for existing local and cluster installations.
+
 Owner-approved publication plan: preserve public commit
 fbaa80e1437aaeb6b5e30d99a5ef13f6aad5c9b9 as `legacy-before-v0.2.0`, then update `main`
 directly with the sanitized package. This supersedes the branch/PR recommendation below.
@@ -30,7 +35,7 @@ No history rewrite or upload has been performed.
 
 ## Recommended transition for the existing public project
 
-Keep https://github.com/ShyuuTheLast/Vessel2Graph as the canonical repository. Preserve
+Keep https://github.com/ShyuuTheLast/VesselEMPy as the canonical repository. Preserve
 its public history and original figures. Before the overhaul, tag the old public commit
 as a legacy checkpoint, then create a branch from that public history and copy in the
 sanitized current files. Review the replacement through a pull request and publish a

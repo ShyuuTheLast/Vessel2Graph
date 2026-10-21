@@ -10,6 +10,9 @@ mixed-caliber generalization and full-volume cluster execution remain to be eval
 
 ## Install
 
+The package and command are `VesselEMPy` (case-sensitive on Linux).
+Existing Vessel2Graph installations should follow [migration](MIGRATION.md).
+
 Use an isolated Python 3.11 environment:
 
 ```sh
@@ -31,8 +34,8 @@ The root `config.yaml` selects that ignored local config. Paths resolve relative
 its YAML file. Historical macaque configs depend on the original workstation data.
 
 ```sh
-python -m vessel2graph estimate --config configs/default.local.yaml
-python -m vessel2graph graph --config runs/dataset/estimation-volume-v2/candidate.yaml
+python -m VesselEMPy estimate --config configs/default.local.yaml
+python -m VesselEMPy graph --config runs/dataset/estimation-volume-v2/candidate.yaml
 ```
 
 The generated candidate uses the prepared mask and newly estimated parameters. The path
@@ -40,7 +43,7 @@ above assumes the example output directory; the measurement report records the a
 Preparation is opt-in. The accepted macaque experiment used:
 
 ```sh
-python -m vessel2graph estimate --config configs/default.local.yaml --fill-holes --closing-radius-nm 1024
+python -m VesselEMPy estimate --config configs/default.local.yaml --fill-holes --closing-radius-nm 1024
 ```
 
 **1024 nm is a development choice, not a general default.** The closed/filled mask is
@@ -55,7 +58,7 @@ prerequisites; do not use it against preserved baselines.
 ## View
 
 ```sh
-python -m vessel2graph view --config runs/dataset/estimation-volume-v2/candidate.yaml
+python -m VesselEMPy view --config runs/dataset/estimation-volume-v2/candidate.yaml
 ```
 
 Open the printed URL; keep the process running. Multiple saved graphs can be displayed

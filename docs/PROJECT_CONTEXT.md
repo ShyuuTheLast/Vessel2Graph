@@ -55,7 +55,7 @@ See PHASE2_RADIUS_SOURCE_AUDIT.md; macaque selection remains label 1 only.
 
 ## Reviewed sources
 
-- Vessel2Graph: https://github.com/ShyuuTheLast/Vessel2Graph
+- Vessel2Graph: https://github.com/ShyuuTheLast/VesselEMPy
   Reviewed commit `fbaa80e1437aaeb6b5e30d99a5ef13f6aad5c9b9`.
 - Magneton: https://github.com/kuan-lab/magneton
   Reviewed commit `4793158fc2cd933ff0c918d05f3f9d95271f25e5`.
@@ -67,7 +67,7 @@ See PHASE2_RADIUS_SOURCE_AUDIT.md; macaque selection remains label 1 only.
 
 ## Phase 1 — authorized
 
-Package existing functionality into an installable `vessel2graph` module. YAML configurations,
+Package existing functionality into an installable `VesselEMPy` module. YAML configurations,
 headless CLI, explicit stages, reusable functions, saved intermediate skeleton/graph/results,
 resolved configuration and dependency provenance. Support fixed parameters and existing skeletons.
 Make optional viewing libraries lazy imports; do not require Mayavi/Napari for computation.

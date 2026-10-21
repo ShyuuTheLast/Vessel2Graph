@@ -5,7 +5,7 @@ In a VS Code PowerShell terminal:
 ```powershell
 cd <project-root>
 . .\scripts\activate.ps1
-vessel2graph view --config config.yaml
+VesselEMPy view --config config.yaml
 ```
 
 This opens the default browser and prints a localhost link. Leave the terminal running;

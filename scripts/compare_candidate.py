@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 import numpy as np
 from scipy.spatial import cKDTree
-from vessel2graph.io import load_arrays, write_json
+from VesselEMPy.io import load_arrays, write_json
 
 root = Path(__file__).resolve().parents[1]
 baseline = root / 'runs/macaque'

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 import kimimaro
-from vessel2graph.pipeline import crop_empty_background
+from VesselEMPy.pipeline import crop_empty_background
 
 
 @pytest.mark.parametrize('touch_face',[False,True])

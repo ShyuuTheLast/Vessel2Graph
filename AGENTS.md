@@ -1,5 +1,11 @@
 # Project handoff instructions
 
+The user authorized renaming the existing repository, package and command to
+VesselEMPy on 2026-10-21, including documentation and cluster integration.
+Current source is `src/VesselEMPy`; use `python -m VesselEMPy` or `VesselEMPy`.
+Existing environment paths and historical artifacts retain their original names;
+new environments default to VesselEMPy. See docs/MIGRATION.md.
+
 Local phase-2 development is paused after user visual acceptance. Prepare source for
 GitHub; do not publish without a requested destination. Large mixed-caliber work belongs
 on Yale Misha. Read docs/CLUSTER_HANDOFF.md before resuming. Root config now selects
@@ -36,7 +42,7 @@ before making scientific or environment changes. Update STATUS after substantive
   Use purposeful iterative experiments to develop good automated TEASAR estimates; distinguish
   development/calibration runs from the desired low-cost production estimation workflow.
 - Do not spawn subagents unless explicitly requested or required by applicable instructions.
-- Current binary-only implementation: src/vessel2graph/volume_estimation.py, documented in
+- Current binary-only implementation: src/VesselEMPy/volume_estimation.py, documented in
   docs/PHASE2_BINARY_ONLY.md. It derives all four tracing parameters from physical profiles,
   with explicit optional enclosed-hole filling. Reference-calibrated v1 is historical and
   does not satisfy the current goal. Preserve all experiments and accepted baseline artifacts.

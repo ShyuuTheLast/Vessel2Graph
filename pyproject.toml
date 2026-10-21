@@ -3,8 +3,8 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vessel2graph"
-version = "0.2.0"
+name = "VesselEMPy"
+version = "0.3.0"
 description = "Configuration-driven vessel skeleton, graph and instance segmentation pipeline"
 requires-python = ">=3.10,<3.13"
 dependencies = [
@@ -20,7 +20,7 @@ plot = ["matplotlib>=3.9,<4"]
 view = ["neuroglancer==2.41.2"]
 
 [project.scripts]
-vessel2graph = "vessel2graph.cli:main"
+VesselEMPy = "VesselEMPy.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

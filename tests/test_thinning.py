@@ -2,8 +2,8 @@ import networkx as nx
 import numpy as np
 import pytest
 import yaml
-from vessel2graph.config import load_config
-from vessel2graph.thinning import thin_skeleton
+from VesselEMPy.config import load_config
+from VesselEMPy.thinning import thin_skeleton
 
 # Synthetic shapes are tens of voxels across, far below any anatomical loop size.
 OPTIONS = dict(closing_radius_nm=0, fill_holes=True, prune_factor=1.5, loop_factor=3.0, min_loop_perimeter_nm=0)

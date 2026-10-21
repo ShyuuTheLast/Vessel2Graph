@@ -37,7 +37,7 @@ def write_job(cfg, command, arguments):
     options=cfg['hpc']
     folder=Path(cfg['output']['directory'])/'slurm'
     folder.mkdir(parents=True,exist_ok=True)
-    lines=['#!/bin/bash',f'#SBATCH --job-name=v2g-{command}',f'#SBATCH --partition={options["partition"]}',
+    lines=['#!/bin/bash',f'#SBATCH --job-name=VesselEMPy-{command}',f'#SBATCH --partition={options["partition"]}',
         f'#SBATCH --cpus-per-task={options["cpus"]}',
         f'#SBATCH --mem={math.ceil(requested_memory_gib(cfg)*1024)}M',
         f'#SBATCH --time={options["time"]}',f'#SBATCH --output={folder}/{command}-%j.log']
@@ -46,7 +46,7 @@ def write_job(cfg, command, arguments):
     # The environment's interpreter is addressed directly; setup is for extra modules.
     # GNU time reports the measured peak RSS and wall time at the end of the log.
     lines+=['set -euo pipefail',*options['setup'],
-        '/usr/bin/time -v '+shlex.join([sys.executable,'-m','vessel2graph',command,*arguments])]
+        '/usr/bin/time -v '+shlex.join([sys.executable,'-m','VesselEMPy',command,*arguments])]
     script=folder/f'{command}.sbatch'
     script.write_text('\n'.join(lines)+'\n',encoding='utf-8')
     return script

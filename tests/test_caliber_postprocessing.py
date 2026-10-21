@@ -4,9 +4,9 @@ import pytest
 import yaml
 from scipy.ndimage import distance_transform_edt
 from scipy.spatial import cKDTree
-from vessel2graph.config import load_config
-from vessel2graph.graph import caliber_seed_labels, ellipsoid_seed_nodes, sandwich_labels
-from vessel2graph.segment import remove_dust, surface_seeds
+from VesselEMPy.config import load_config
+from VesselEMPy.graph import caliber_seed_labels, ellipsoid_seed_nodes, sandwich_labels
+from VesselEMPy.segment import remove_dust, surface_seeds
 
 RESOURCES = dict(max_memory_gib=4, reserve_memory_gib=0.01)
 

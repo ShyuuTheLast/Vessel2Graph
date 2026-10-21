@@ -20,14 +20,18 @@ These artifacts and input data are excluded from Git; transfer separately if nee
 
 ## Linux setup
 
+Existing installations should follow the short
+[VesselEMPy migration](MIGRATION.md#version-03-naming-update). The activation helper
+can reuse the existing environment; creating a second environment is optional.
+
 Use Misha's Miniconda module, with the environment and caches inside the workspace.
 From the repository root, create and install once:
 
 ```sh
 module load miniconda
 CONDA_PKGS_DIRS="$PWD/.tools/conda-pkgs" XDG_CACHE_HOME="$PWD/.tools/cache" \
-  conda env create --prefix "$PWD/.tools/conda-envs/vessel2graph" -f environment.yml --yes
-conda activate "$PWD/.tools/conda-envs/vessel2graph"
+  conda env create --prefix "$PWD/.tools/conda-envs/VesselEMPy" -f environment.yml --yes
+conda activate "$PWD/.tools/conda-envs/VesselEMPy"
 PIP_CACHE_DIR="$PWD/.tools/pip-cache" python -m pip install -e ".[test]" -c requirements-core.txt
 python -m pip check
 python scripts/check_environment.py
@@ -36,7 +40,8 @@ python -m pytest -q
 
 For subsequent Bash sessions, `source scripts/activate.sh` loads the module and
 activates this environment. Equivalently, run `module load miniconda` followed by
-`conda activate "$PWD/.tools/conda-envs/vessel2graph"` from the repository root.
+`conda activate "$PWD/.tools/conda-envs/VesselEMPy"` from the repository root for a new
+environment. The helper also recognizes the earlier `vessel2graph` environment.
 The optional Neuroglancer viewer is installed separately with `".[view]"` using
 the same constraints; its tests are skipped in a core-only environment.
 
@@ -54,8 +59,8 @@ spacing, memory and a unique output directory. Mouse spacing is (1280,256,256) n
 On an allocated compute node, start with a representative crop:
 
 ```sh
-python -m vessel2graph estimate --config configs/default.local.yaml
-python -m vessel2graph graph --config runs/dataset/estimation-volume-v2/candidate.yaml
+python -m VesselEMPy estimate --config configs/default.local.yaml
+python -m VesselEMPy graph --config runs/dataset/estimation-volume-v2/candidate.yaml
 ```
 
 The candidate path assumes the example output directory; the measurement report records
@@ -72,8 +77,8 @@ large-memory job, not an array. Any compute command accepts `--slurm`, which wri
 which also submits it:
 
 ```sh
-python -m vessel2graph estimate --config configs/default.local.yaml --slurm
-python -m vessel2graph graph --config runs/dataset/estimation-volume-v2/candidate.yaml --slurm
+python -m VesselEMPy estimate --config configs/default.local.yaml --slurm
+python -m VesselEMPy graph --config runs/dataset/estimation-volume-v2/candidate.yaml --slurm
 ```
 
 The `hpc:` config section sets partition (default `bigmem`; Misha has two 2 TB nodes),

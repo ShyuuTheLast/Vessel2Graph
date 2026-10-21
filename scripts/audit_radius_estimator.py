@@ -14,7 +14,7 @@ import numpy as np
 import edt
 import psutil
 from scipy.optimize import brentq
-from vessel2graph.io import digest_file, write_json
+from VesselEMPy.io import digest_file, write_json
 from kimimaro.trace import compute_pdrf
 import kimimaro.skeletontricks as tricks
 

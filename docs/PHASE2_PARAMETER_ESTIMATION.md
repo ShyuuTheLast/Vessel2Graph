@@ -163,7 +163,7 @@ approach succeeds or fails. Avoid claims of mathematical optimality or automatic
 
 ## First implemented experiment — 2026-09-10
 
-`vessel2graph estimate --config config.yaml` computes one physical EDT, a 16-threshold linear
+`VesselEMPy estimate --config config.yaml` computes one physical EDT, a 16-threshold linear
 erosion/26-connected-component curve, and samples 1,024 random interior seeds (EDT > twice
 minimum spacing). Up to 32 local EDT ascent steps move seeds toward ridges. Duplicates are
 removed. A finite-difference Hessian rejects samples without two negative transverse eigenvalues

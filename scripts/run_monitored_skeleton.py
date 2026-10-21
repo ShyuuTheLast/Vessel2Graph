@@ -11,8 +11,8 @@ import subprocess
 import sys
 import time
 import psutil
-from vessel2graph.config import load_config
-from vessel2graph.io import write_json
+from VesselEMPy.config import load_config
+from VesselEMPy.io import write_json
 
 
 def main():
@@ -24,7 +24,7 @@ def main():
     if cfg['skeleton']['parallel']!=1:
         raise ValueError('This development monitor supports serial tracing only')
     if args.worker:
-        import vessel2graph.pipeline as pipeline
+        import VesselEMPy.pipeline as pipeline
         pipeline.run(cfg,target='graph')
         return
     output=Path(cfg['output']['directory'])

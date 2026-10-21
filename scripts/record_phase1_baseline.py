@@ -5,7 +5,7 @@ import argparse
 import itertools
 import networkx as nx
 import numpy as np
-from vessel2graph.io import digest_file, load_arrays, write_json
+from VesselEMPy.io import digest_file, load_arrays, write_json
 
 root = Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)

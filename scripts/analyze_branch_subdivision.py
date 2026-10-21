@@ -10,7 +10,7 @@ import csv
 import json
 import networkx as nx
 import numpy as np
-from vessel2graph.io import digest_file, load_arrays, write_json
+from VesselEMPy.io import digest_file, load_arrays, write_json
 
 
 def edge(a, b):

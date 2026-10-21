@@ -1,8 +1,12 @@
-# Vessel2Graph
+# VesselEMPy
+
+Repository, Python package and terminal command: **VesselEMPy**. Use
+`import VesselEMPy`, `python -m VesselEMPy`, or the installed `VesselEMPy` command.
+For an existing Vessel2Graph installation, follow the [migration guide](docs/MIGRATION.md).
 
 **A graph-based segmentation toolbox for blood vessel volumes.**
 
-Vessel2Graph turns volumetric vessel masks into sparse graphs that can be explored,
+VesselEMPy turns volumetric vessel masks into sparse graphs that can be explored,
 measured, and mapped back into the original volume. It is designed for EM vascular
 analysis, where selecting a vessel by its connections can be more useful than selecting
 whatever happens to fall inside a spatial region.
@@ -69,7 +73,7 @@ start at 1, while unreachable branches are 0.
 
 A useful graph starts with a useful skeleton. Manually tuning tracing parameters can
 become a substantial part of the work, especially when segmentation defects create
-false branches or displace junctions. Vessel2Graph now includes an experimental route
+false branches or displace junctions. VesselEMPy now includes an experimental route
 from **binary mask and physical spacing to a proposed TEASAR parameter set**.
 
 ```mermaid
@@ -132,8 +136,8 @@ selected labels, **ZYX voxel spacing in nanometers**, output directory, and memo
 Then, using the example output directory:
 
 ```sh
-python -m vessel2graph estimate --config config.yaml
-python -m vessel2graph graph --config runs/dataset/estimation-volume-v2/candidate.yaml
+python -m VesselEMPy estimate --config config.yaml
+python -m VesselEMPy graph --config runs/dataset/estimation-volume-v2/candidate.yaml
 ```
 
 For explicitly selected preparation, add `--fill-holes --closing-radius-nm VALUE` to

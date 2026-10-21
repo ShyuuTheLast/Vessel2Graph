@@ -1,6 +1,6 @@
 # Original showcase images
 
-Copied unchanged from [Vessel2Graph at fbaa80e1437a](https://github.com/ShyuuTheLast/Vessel2Graph/tree/fbaa80e1437aaeb6b5e30d99a5ef13f6aad5c9b9/images).
+Copied unchanged from [Vessel2Graph at fbaa80e1437a](https://github.com/ShyuuTheLast/VesselEMPy/tree/fbaa80e1437aaeb6b5e30d99a5ef13f6aad5c9b9/images).
 
 These are the original project figures, retained with the repository owner's instruction. They illustrate segmentation operations; they are not new packaged-pipeline benchmarks.
 

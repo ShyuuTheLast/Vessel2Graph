@@ -241,7 +241,7 @@ def serve(cfg):
         previous = signal.signal(signal.SIGBREAK, interrupt)
     process = None
     try:
-        process = subprocess.Popen([sys.executable, '-u', '-m', 'vessel2graph.viewer'],
+        process = subprocess.Popen([sys.executable, '-u', '-m', 'VesselEMPy.viewer'],
             stdin=subprocess.PIPE, text=True,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0,
             start_new_session=os.name != 'nt')

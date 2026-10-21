@@ -90,10 +90,10 @@ The workspace environment provides two explicit operations:
 
 ```powershell
 # One-time development calibration using an accepted run.
-python -m vessel2graph calibrate --config config.yaml --reference runs/macaque --calibration calibrations/macaque-reference-v1.json
+python -m VesselEMPy calibrate --config config.yaml --reference runs/macaque --calibration calibrations/macaque-reference-v1.json
 
 # Application: reads the input segmentation and saved model, not the reference graph.
-python -m vessel2graph estimate --config config.yaml --calibration calibrations/macaque-reference-v1.json
+python -m VesselEMPy estimate --config config.yaml --calibration calibrations/macaque-reference-v1.json
 ```
 
 Estimation writes `runs/macaque/estimation-reference/measurements.json` and
@@ -108,7 +108,7 @@ full macaque skeletonization preflight.
 The executed scientific stage command was:
 
 ```powershell
-python -m vessel2graph graph --config outputs/baseline-calibration/candidate.yaml
+python -m VesselEMPy graph --config outputs/baseline-calibration/candidate.yaml
 ```
 
 The packaged estimator subsequently generated an identical resolved configuration;

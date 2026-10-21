@@ -7,7 +7,7 @@ from .pipeline import run
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='Vessel2Graph configuration-driven pipeline')
+    parser = argparse.ArgumentParser(prog="VesselEMPy", description='VesselEMPy configuration-driven pipeline')
     parser.add_argument('command', choices=['run', 'skeleton', 'graph', 'segment', 'report', 'status', 'view', 'estimate', 'calibrate'])
     parser.add_argument('--config', default='config.yaml', help='Dataset YAML or main switchboard YAML')
     parser.add_argument('--force', action='store_true', help='Recompute requested stage and all prerequisites')

@@ -6,8 +6,8 @@ import h5py
 import numpy as np
 import yaml
 from scipy.spatial import cKDTree
-from vessel2graph.io import load_arrays,write_json,digest_file
-from vessel2graph.segment import check_memory
+from VesselEMPy.io import load_arrays,write_json,digest_file
+from VesselEMPy.segment import check_memory
 
 
 def main():

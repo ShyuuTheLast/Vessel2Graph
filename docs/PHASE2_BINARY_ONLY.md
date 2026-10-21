@@ -191,10 +191,10 @@ The baseline remains a practical reference, not ground truth.
 . .\scripts\activate.ps1
 
 # Binary mask + spacing; no skeleton or calibration input.
-python -m vessel2graph estimate --config configs/macaque-binary.yaml --fill-holes
+python -m VesselEMPy estimate --config configs/macaque-binary.yaml --fill-holes
 
 # Run the emitted candidate, in its own output directory.
-python -m vessel2graph graph --config runs/macaque-binary/estimation-volume-v2/candidate.yaml
+python -m VesselEMPy graph --config runs/macaque-binary/estimation-volume-v2/candidate.yaml
 ```
 
 `estimate` now defaults to the volume method. `--fill-holes` is explicit; without it,
@@ -206,7 +206,7 @@ The actual evaluated candidate is in `runs/macaque-volume-estimated-v2`, generat
 from `runs/macaque/estimation-volume-v2/candidate.yaml`. To inspect that existing run:
 
 ```powershell
-python -m vessel2graph view --config runs/macaque/estimation-volume-v2/candidate.yaml
+python -m VesselEMPy view --config runs/macaque/estimation-volume-v2/candidate.yaml
 ```
 
 The new clean config writes future experiments under `runs/macaque-binary` so it does
