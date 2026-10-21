@@ -1,5 +1,49 @@
 # Status — 2026-09-09
 
+## Why the caliber post-processing looks the way it does — 2026-10-20
+
+Evidence behind the 2026-10-17 port, from experiments on the full mouse volume (thinning
+skeleton, 2,015,805 nodes, 14,668 branches). Scratch scripts and outputs: shared storage
+vessel2graph/mouse-full/ (kmeans2/, kmeans2_tree/) and ~/bloodvessel/caliber_test/.
+
+- Trunk-angle tiers dropped. Grouping branches into trunks by continuation angle (150 and
+  160 degrees) pulled many capillaries into the trunks, which defeats the purpose (user
+  judgement on inspection). The apparent parallel orientation of capillary trunks is an
+  anisotropy artefact: trunks run along z (0.97-0.98), the axis with 5x coarser voxels.
+  The figure uses a plain two-class KMeans on per-branch median radius instead.
+- Median over all branch nodes, not sphere-rule reduced nodes. The reduced set
+  over-weights the thin tapering end of large dead-end stumps, which were then classed as
+  capillary and dented the large vessel (user-flagged at 3877,263,270 and 4023,291,199).
+  Branch medians reduced vs all nodes: 6421 2.05 vs 5.71 um, 6422 1.49 vs 6.62 um,
+  4799 1.08 vs 11.09 um. Two-class centres with all nodes: 2.01 / 8.40 um.
+- Ellipsoids only at mixed junctions (user design). Their job is to stop a thin side branch
+  from claiming voxels inside a thick vessel's wall, together with the branch-end relabel.
+  Painting 100x100 surface samples costs 20.4 min for every node, 3.4 min for the 353,959
+  sphere-rule reduced nodes; flagging only the junction and larger-class nodes within 1.5
+  junction radii needs about 16-18k ellipsoids.
+- Euclidean, not chessboard. On a half slab chessboard CDT ran about 7.6 min against 12.5
+  min for EDT, but with 1280x256x256 nm voxels it gave 74% of voxels a different nearest
+  seed, and it ran out of memory at 46 GB on a 1/8 slab.
+- KD-tree kept, now checked. The per-voxel tree search came from v0.2 without comparison to
+  a distance transform. Against a full-volume EDT with return_indices to the same 21.1M
+  seeds: 6,410 of 228,458,601 voxels differ (ties). Tree build 36 s, queries 85 s on 8
+  CPUs; the EDT step alone is about 23.5 min single-threaded.
+- v0.2 had also dropped the sandwich rule and replaced legacy label_branch_points with a
+  largest-radius-neighbour rule; both restored to legacy behaviour.
+
+Pipeline run (config pipeline-thinning/mouse_full_caliber.yaml, Slurm bigmem, 8 CPUs,
+200 GB; output pipeline-thinning/mouse_full_caliber/): 23 min 20 s, peak RSS 120 GB.
+Large class from 5.22 um; branches 14,083 / 585 after KMeans, 14,062 / 606 after 21
+sandwiches; 8,909 end-relabelled nodes; 16,148 ellipsoid nodes; 19.16M seeds; dust
+relabelled 128 of 140 large pieces (1.98M voxels); final voxels 173.2M / 55.2M (24.2%
+large); all 228,458,601 mask voxels assigned, none outside. The scratch figure layer
+(kmeans2, reduced-node median) gave 586 large branches and 24.5% large voxels.
+
+Open: the segment stage took 1,215 s against about 2 min of queries. CPU averaged 110%, so
+the time is serial work, most likely HDF5: uint32 gzip with automatic chunks (10,56,161),
+written, read back for dust, rewritten, and read again for voxel counts. Not profiled. A
+uint8 label volume held in memory and written once should remove most of it.
+
 ## Caliber post-processing ported for the full mouse volume — 2026-10-17
 
 Legacy steps lost in v0.2 are back, for a two-class caliber figure on the full mouse volume

@@ -133,7 +133,9 @@ voxels inside the thick vessel's wall. Ellipsoid seeds are written after point s
 win collisions; otherwise the last node wins. A KD-tree over the seeds is queried only at
 selected voxels, in parallel. With Euclidean distance this equals a full-volume distance
 transform with nearest-seed indices up to ties (0.003% of voxels on the full mouse volume)
-without its volume-sized index arrays: 21M seeds, 228M voxels in about 2 minutes on 8 CPUs.
+without its volume-sized index arrays: 21M seeds, 228M voxels queried in about 2 minutes on
+8 CPUs. The whole segment stage on that volume currently takes about 20 minutes, mostly
+serial HDF5 passes over the output (STATUS, 2026-10-20).
 Distances can cross background; this is a geometric assignment, not geodesic propagation.
 In label mode the dust step then runs on the whole volume in memory (1 byte per voxel plus
 cc3d's 4-byte labels) and the voxel counts in `segmentation.json` are taken after it.
